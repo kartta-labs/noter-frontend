@@ -72,7 +72,7 @@ const TopNavigationBar: React.FC<IProps> = ({updateActivePopupType, updateProjec
                         onClick={() => updateActivePopupType(PopupWindowType.LOAD_IMAGES)}
                     />
                     <UnderlineTextButton
-                        label={"EXPORT LABELS"}
+                        label={"UPLOAD"}
                         under={true}
                         onClick={() => updateActivePopupType(PopupWindowType.EXPORT_LABELS)}
                     />

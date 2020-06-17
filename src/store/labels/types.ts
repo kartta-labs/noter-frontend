@@ -47,6 +47,7 @@ export type LabelName = {
 }
 
 export type ImageData = {
+
     id: string;
     fileData: File;
     loadStatus: boolean;
@@ -54,6 +55,11 @@ export type ImageData = {
     labelPoints: LabelPoint[];
     labelLines: LabelLine[];
     labelPolygons: LabelPolygon[];
+
+    // Primary key of this image in the backend database, if exists.
+    pk: number;
+    // Annotations of this image in the backend database, if exists.
+    annotations: string;
 
     // SSD
     isVisitedByObjectDetector: boolean;

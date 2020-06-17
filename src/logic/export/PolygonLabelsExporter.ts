@@ -6,6 +6,7 @@ import {LabelsSelector} from "../../store/selectors/LabelsSelector";
 import {saveAs} from "file-saver";
 import {ExporterUtil} from "../../utils/ExporterUtil";
 import {findLast} from "lodash";
+import axios from 'axios';
 
 export class PolygonLabelsExporter {
     public static export(exportFormatType: ExportFormatType): void {
@@ -21,13 +22,33 @@ export class PolygonLabelsExporter {
     private static exportAsVGGJson(): void {
         const imagesData: ImageData[] = LabelsSelector.getImagesData();
         const labelNames: LabelName[] = LabelsSelector.getLabelNames();
-        const content: string = JSON.stringify(PolygonLabelsExporter.mapImagesDataToVGGObject(imagesData, labelNames));
-        const blob = new Blob([content], {type: "text/plain;charset=utf-8"});
-        try {
-            saveAs(blob, `${ExporterUtil.getExportFileName()}.json`);
-        } catch (error) {
-            // TODO
-            throw new Error(error);
+        for (let i=0; i < imagesData.length; i++)
+        {
+            const content: string = JSON.stringify({"VGG_JSON":PolygonLabelsExporter.mapImagesDataToVGGObject([imagesData[i]], [labelNames[i]])});
+            const formData = new FormData();
+            formData.append("annotations", content);
+            if(!imagesData[i].pk) {
+                formData.append("image", imagesData[i].fileData);
+                axios.post(process.env.REACT_APP_BACKEND_URL+"/api/images/", formData)
+                .then(response => {
+                    imagesData[i].pk = response.data.pk;
+                    imagesData[i].annotations = response.data.annotations;
+                    console.log(response);
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            } else if (imagesData[i].annotations != content) {
+                axios.put(process.env.REACT_APP_BACKEND_URL+"/api/images/"+imagesData[i].pk+"/", formData)
+                .then(response => {
+                    imagesData[i].annotations = response.data.annotations;
+                    console.log("sent a put.");
+                    console.log(response);
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            }
         }
     }
 
@@ -47,7 +68,7 @@ export class PolygonLabelsExporter {
         return {
             fileref: "",
             size: imageData.fileData.size,
-            filename: imageData.fileData.name,
+            filename: "",//imageData.fileData.name,
             base64_img_data: "",
             file_attributes: {},
             regions: regionsData
