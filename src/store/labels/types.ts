@@ -60,6 +60,8 @@ export type ImageData = {
     pk: number;
     // Annotations of this image in the backend database, if exists.
     annotations: string;
+    // Response from the backend for uploading this image, if exists.
+    response: any;
 
     // SSD
     isVisitedByObjectDetector: boolean;

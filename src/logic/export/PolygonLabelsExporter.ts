@@ -52,7 +52,7 @@ export class PolygonLabelsExporter {
         }
     }
 
-    private static mapImagesDataToVGGObject(imagesData: ImageData[], labelNames: LabelName[]): VGGObject {
+    public static mapImagesDataToVGGObject(imagesData: ImageData[], labelNames: LabelName[]): VGGObject {
         return imagesData.reduce((data: VGGObject, image: ImageData) => {
             const fileData: VGGFileData = PolygonLabelsExporter.mapImageDataToVGGFileData(image, labelNames);
             if (!!fileData) {

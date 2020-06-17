@@ -10,6 +10,7 @@ import TextInput from "../../Common/TextInput/TextInput";
 import {ImageButton} from "../../Common/ImageButton/ImageButton";
 import {Settings} from "../../../settings/Settings";
 import {ProjectData} from "../../../store/general/types";
+import {Uploader} from "../../../logic/export/Uploader";
 
 interface IProps {
     updateActivePopupType: (activePopupType: PopupWindowType) => any;
@@ -74,7 +75,7 @@ const TopNavigationBar: React.FC<IProps> = ({updateActivePopupType, updateProjec
                     <UnderlineTextButton
                         label={"UPLOAD"}
                         under={true}
-                        onClick={() => updateActivePopupType(PopupWindowType.EXPORT_LABELS)}
+                        onClick={() => {Uploader.uploadAll()}}
                     />
                     <ImageButton
                         image={"img/github-logo.png"}
