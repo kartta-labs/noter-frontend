@@ -169,7 +169,7 @@ export class RectLabelsExporter {
         }
     }
 
-    private static wrapRectLabelsIntoCSV(imageData: ImageData): string {
+    public static wrapRectLabelsIntoCSV(imageData: ImageData): string {
         if (imageData.labelRects.length === 0 || !imageData.loadStatus)
             return null;
 

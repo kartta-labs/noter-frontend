@@ -34,7 +34,7 @@ export class LineLabelsExporter {
         }
     }
 
-    private static wrapLineLabelsIntoCSV(imageData: ImageData): string {
+    public static wrapLineLabelsIntoCSV(imageData: ImageData): string {
         if (imageData.labelLines.length === 0 || !imageData.loadStatus)
             return null;
 
