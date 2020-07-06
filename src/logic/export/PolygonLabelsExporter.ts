@@ -29,7 +29,7 @@ export class PolygonLabelsExporter {
             formData.append("annotations", content);
             if(!imagesData[i].pk) {
                 formData.append("image", imagesData[i].fileData);
-                axios.post(process.env.REACT_APP_BACKEND_URL+"/api/images/", formData)
+                axios.post(process.env.REACT_APP_BACKEND_URL+"/api/images/", formData, {withCredentials: true})
                 .then(response => {
                     imagesData[i].pk = response.data.pk;
                     imagesData[i].annotations = response.data.annotations;
@@ -39,7 +39,7 @@ export class PolygonLabelsExporter {
                     console.log(error);
                 });
             } else if (imagesData[i].annotations != content) {
-                axios.put(process.env.REACT_APP_BACKEND_URL+"/api/images/"+imagesData[i].pk+"/", formData)
+                axios.put(process.env.REACT_APP_BACKEND_URL+"/api/images/"+imagesData[i].pk+"/", formData, {withCredentials: true})
                 .then(response => {
                     imagesData[i].annotations = response.data.annotations;
                     console.log("sent a put.");
