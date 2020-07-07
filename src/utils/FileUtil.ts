@@ -11,9 +11,8 @@ export class FileUtil {
             labelPoints: [],
             labelLines: [],
             labelPolygons: [],
-            response: "",
-            pk: 0,
-            annotations: "",
+            uploadResponse: "",
+            annotationsResponse: "",
             isVisitedByObjectDetector: false,
             isVisitedByPoseDetector: false
         }

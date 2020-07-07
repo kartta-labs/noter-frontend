@@ -22,33 +22,13 @@ export class PolygonLabelsExporter {
     private static exportAsVGGJson(): void {
         const imagesData: ImageData[] = LabelsSelector.getImagesData();
         const labelNames: LabelName[] = LabelsSelector.getLabelNames();
-        for (let i=0; i < imagesData.length; i++)
-        {
-            const content: string = JSON.stringify({"VGG_JSON":PolygonLabelsExporter.mapImagesDataToVGGObject([imagesData[i]], [labelNames[i]])});
-            const formData = new FormData();
-            formData.append("annotations", content);
-            if(!imagesData[i].pk) {
-                formData.append("image", imagesData[i].fileData);
-                axios.post(process.env.REACT_APP_BACKEND_URL+"/api/images/", formData, {withCredentials: true})
-                .then(response => {
-                    imagesData[i].pk = response.data.pk;
-                    imagesData[i].annotations = response.data.annotations;
-                    console.log(response);
-                })
-                .catch(function (error) {
-                    console.log(error);
-                });
-            } else if (imagesData[i].annotations != content) {
-                axios.put(process.env.REACT_APP_BACKEND_URL+"/api/images/"+imagesData[i].pk+"/", formData, {withCredentials: true})
-                .then(response => {
-                    imagesData[i].annotations = response.data.annotations;
-                    console.log("sent a put.");
-                    console.log(response);
-                })
-                .catch(function (error) {
-                    console.log(error);
-                });
-            }
+        const content: string = JSON.stringify(PolygonLabelsExporter.mapImagesDataToVGGObject(imagesData, labelNames));
+        const blob = new Blob([content], {type: "text/plain;charset=utf-8"});
+        try {
+            saveAs(blob, `${ExporterUtil.getExportFileName()}.json`);
+        } catch (error) {
+            // TODO
+            throw new Error(error);
         }
     }
 

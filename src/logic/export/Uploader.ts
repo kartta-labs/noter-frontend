@@ -19,20 +19,23 @@ export class Uploader {
         const labelNames: LabelName[] = LabelsSelector.getLabelNames();
         for (let i=0; i < imagesData.length; i++)
         {
-            // TODO: Make this async.
-            this.uploadImage(imagesData[i], labelNames[i]);
+            this.uploadImageAndAnnotations(imagesData[i], labelNames[i]);
         }        
     }
 
-    private static uploadImage(imageData: ImageData, labelName: LabelName): void {
-        const formData = new FormData();
+    private static uploadImageAndAnnotations(imageData: ImageData, labelName: LabelName): void {
         const annotations = {};
         this.addPointLabels(annotations, imageData, labelName);
         this.addRectLabels(annotations, imageData, labelName);
         this.addLineLabels(annotations, imageData, labelName);
         this.addPolygonLabels(annotations, imageData, labelName);
-        formData.append("annotations", JSON.stringify(annotations));
-        this.submitToApi(formData, imageData);
+
+        if (!imageData.uploadResponse || !imageData.uploadResponse.data.id) {
+            // If image is not already uploaded
+            this.uploadImageAndAnnotation(annotations, imageData);
+        } else if (!imageData.annotationsResponse || imageData.annotationsResponse.data.content_json != JSON.stringify(annotations)) {
+            this.uploadOnlyAnnotations(annotations, imageData);
+        }
     }
 
     private static addPointLabels(annotations: any, imageData: ImageData, labelName: LabelName): void {
@@ -60,27 +63,36 @@ export class Uploader {
         }
     }
 
-    private static submitToApi(formData: FormData, imageData: ImageData): void {
-        if(!imageData.response || !imageData.response.data.pk) {
-            formData.append("image", imageData.fileData);
-            axios.post(process.env.REACT_APP_BACKEND_URL+"/api/images/", formData)
-            .then(response => {
-                imageData.response = response;
-                console.log(response);
-            })
-            .catch(function (error) {
-                console.log(error);
-            });
-        } else if (imageData.response.data.annotations != formData.get("annotations")) {
-            axios.put(process.env.REACT_APP_BACKEND_URL+"/api/images/"+imageData.response.data.pk+"/", formData)
-            .then(response => {
-                imageData.response = response;
-                console.log("sent a put.");
-                console.log(response);
-            })
-            .catch(function (error) {
-                console.log(error);
-            });
-        }
+    private static uploadImageAndAnnotation(annotations, imageData: ImageData): void {
+        const formData = new FormData();
+        formData.append("image", imageData.fileData);
+        // TODO: We hardcode the project_id here, but it needs to be fetched and set properly.
+        formData.append("project_id", "1");
+        axios.post(process.env.REACT_APP_BACKEND_URL+"/api/v0.1/images/", formData)
+        .then(response => {
+            imageData.uploadResponse = response;
+            console.log(response);
+            this.uploadOnlyAnnotations(annotations, imageData);
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+    }
+
+    private static uploadOnlyAnnotations(annotations, imageData: ImageData): void {
+        const formData = new FormData();
+        formData.append("content_json", JSON.stringify(annotations))
+        formData.append("image_id", imageData.uploadResponse.data.id)
+
+        axios.post(process.env.REACT_APP_BACKEND_URL+"/api/v0.1/annotations/", formData)
+        .then(response => {
+            imageData.annotationsResponse = response;
+            console.log(response);
+            console.log(imageData.annotationsResponse);
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+
     }
 }

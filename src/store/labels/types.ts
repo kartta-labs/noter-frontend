@@ -56,12 +56,10 @@ export type ImageData = {
     labelLines: LabelLine[];
     labelPolygons: LabelPolygon[];
 
-    // Primary key of this image in the backend database, if exists.
-    pk: number;
-    // Annotations of this image in the backend database, if exists.
-    annotations: string;
     // Response from the backend for uploading this image, if exists.
-    response: any;
+    uploadResponse: any;
+    // Response from the backend for uploading the annotations of this image, if exists.
+    annotationsResponse: any;
 
     // SSD
     isVisitedByObjectDetector: boolean;
