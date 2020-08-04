@@ -13,7 +13,7 @@ const initialState: GeneralState = {
     crossHairVisible: true,
     projectData: {
         type: null,
-        name: "my-project-name",
+        name: "kartta-labs",
     },
     zoom: ViewPointSettings.MIN_ZOOM
 };

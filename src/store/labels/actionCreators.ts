@@ -1,4 +1,4 @@
-import {LabelsActionTypes, ImageData, LabelName} from "./types";
+import {LabelsActionTypes, ImageData, LabelName, FootprintPolygon} from "./types";
 import {Action} from "../Actions";
 import {LabelType} from "../../data/enums/LabelType";
 
@@ -91,4 +91,41 @@ export function updateFirstLabelCreatedFlag(firstLabelCreatedFlag: boolean) {
             firstLabelCreatedFlag
         }
     }
+}
+
+export function updateFootprint(footprint: FootprintPolygon[]): LabelsActionTypes {
+    return {
+        type: Action.UPDATE_FOOTPRINT,
+        payload: {
+            footprint,
+        },
+    };
+}
+
+export function updateSelectdPoints(polygonIndex: number, pointIndex: number): LabelsActionTypes {
+    return {
+        type: Action.UPDATE_SELECTED_POINTS,
+        payload: {
+            polygonIndex,
+            pointIndex,
+        },
+    };
+}
+
+export function updateAssociations(facadeId: string): LabelsActionTypes {
+    return {
+        type: Action.UPDATE_ASSOCIATIONS,
+        payload: {
+            facadeId,
+        },
+    };
+}
+
+export function deleteAssociation(facadeId: string): LabelsActionTypes {
+    return {
+        type: Action.DELETE_ASSOCIATION,
+        payload: {
+            facadeId,
+        },
+    };
 }

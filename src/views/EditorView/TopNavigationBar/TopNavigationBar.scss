@@ -3,7 +3,7 @@
 .TopNavigationBar {
   align-self: stretch;
   min-height: $topNavigationBarHeight;
-  background-color: $darkThemeFirstColor;
+  background-color: white;
   box-shadow: 0 0 6px 0 rgba(0,0,0,.2);
 
   display: flex;
@@ -16,7 +16,7 @@
 
   .TopNavigationBarWrapper {
     padding: 0 $sideNavigationBarCompanionWidth;
-    color: white;
+    color: black;
     align-self: stretch;
     flex: 1;
     height: calc(#{$topNavigationBarHeight} - #{$stateBarHeight});

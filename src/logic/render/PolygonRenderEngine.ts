@@ -192,6 +192,8 @@ export class PolygonRenderEngine extends BaseRenderEngine {
 
     private drawActivelyCreatedLabel(data: EditorData) {
         const standardizedPoints: IPoint[] = this.activePath.map((point: IPoint) => RenderEngineUtil.setPointBetweenPixels(point));
+        if (data.mousePositionOnViewPortContent == null)
+            return;
         const path = standardizedPoints.concat(data.mousePositionOnViewPortContent);
         const lines: ILine[] = this.mapPointsToLines(path);
 
@@ -223,16 +225,20 @@ export class PolygonRenderEngine extends BaseRenderEngine {
             const isActive: boolean = labelPolygon.id === activeLabelId || labelPolygon.id === highlightedLabelId;
             const pathOnCanvas: IPoint[] = RenderEngineUtil.transferPolygonFromImageToViewPortContent(labelPolygon.vertices, data);
             if (!(labelPolygon.id === activeLabelId && this.isResizeInProgress())) {
-                this.drawPolygon(pathOnCanvas, isActive);
+                this.drawPolygon(pathOnCanvas, isActive, labelPolygon.id === highlightedLabelId);
             }
         });
     }
 
-    private drawPolygon(polygon: IPoint[], isActive: boolean) {
+    private drawPolygon(polygon: IPoint[], isActive: boolean, isHighlighted = false) {
         const color: string = isActive ? this.config.lineActiveColor : this.config.lineInactiveColor;
         const standardizedPoints: IPoint[] = polygon.map((point: IPoint) => RenderEngineUtil.setPointBetweenPixels(point));
         if (isActive) {
-            DrawUtil.drawPolygonWithFill(this.canvas, standardizedPoints, DrawUtil.hexToRGB(color, 0.2));
+            if (isHighlighted) {
+                DrawUtil.drawPolygonWithFill(this.canvas, standardizedPoints, DrawUtil.hexToRGB(color, 0.4));
+            } else {
+                DrawUtil.drawPolygonWithFill(this.canvas, standardizedPoints, DrawUtil.hexToRGB(color, 0.2));
+            }
         }
         DrawUtil.drawPolygon(this.canvas, standardizedPoints, color, this.config.lineThickness);
         if (isActive) {

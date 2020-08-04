@@ -54,6 +54,7 @@
   }
 
   &.right {
+    height: 50%;
     flex-direction: row-reverse;
     border-left: solid 1px $darkThemeFirstColor;
 

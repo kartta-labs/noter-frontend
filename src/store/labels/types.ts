@@ -1,7 +1,7 @@
 import {IRect} from "../../interfaces/IRect";
 import {Action} from "../Actions";
 import {LabelType} from "../../data/enums/LabelType";
-import {IPoint} from "../../interfaces/IPoint";
+import {IPoint, IGeoPoint} from "../../interfaces/IPoint";
 import {LabelStatus} from "../../data/enums/LabelStatus";
 import {ILine} from "../../interfaces/ILine";
 
@@ -68,6 +68,21 @@ export type ImageData = {
     isVisitedByPoseDetector: boolean;
 }
 
+export type FootprintPolygon = {
+    vertices: IGeoPoint[];
+}
+
+export type FacadeFrontLinePair = {
+    facadeId: string;
+    polygonIndex: number;
+    indices: number[];
+}
+
+export type BuildingMetadata = {
+    footprint: FootprintPolygon[];
+    associations: FacadeFrontLinePair[];
+}
+
 export type LabelsState = {
     activeImageIndex: number;
     activeLabelNameId: string;
@@ -77,6 +92,7 @@ export type LabelsState = {
     imagesData: ImageData[];
     firstLabelCreatedFlag: boolean;
     labels: LabelName[];
+    buildingMetadata: BuildingMetadata;
 }
 
 interface UpdateActiveImageIndex {
@@ -150,6 +166,35 @@ interface UpdateFirstLabelCreatedFlag {
     }
 }
 
+interface UpdateFootprint {
+    type: typeof Action.UPDATE_FOOTPRINT;
+    payload: {
+        footprint: FootprintPolygon[];
+    }
+}
+
+interface UpdateSelectdPoints {
+    type: typeof Action.UPDATE_SELECTED_POINTS;
+    payload: {
+        polygonIndex: number;
+        pointIndex: number;
+    }
+}
+
+interface UpdateAssociations {
+    type: typeof Action.UPDATE_ASSOCIATIONS;
+    payload: {
+        facadeId: string;
+    }
+}
+
+interface DeleteAssociation {
+    type: typeof Action.DELETE_ASSOCIATION;
+    payload: {
+        facadeId: string;
+    }
+}
+
 export type LabelsActionTypes = UpdateActiveImageIndex
     | UpdateActiveLabelNameId
     | UpdateActiveLabelType
@@ -160,4 +205,7 @@ export type LabelsActionTypes = UpdateActiveImageIndex
     | UpdateActiveLabelId
     | UpdateHighlightedLabelId
     | UpdateFirstLabelCreatedFlag
-
+    | UpdateFootprint
+    | UpdateSelectdPoints
+    | UpdateAssociations
+    | DeleteAssociation

@@ -1,5 +1,5 @@
 import {store} from "../..";
-import {ImageData, LabelLine, LabelName, LabelPoint, LabelPolygon, LabelRect} from "../labels/types";
+import {ImageData, LabelLine, LabelName, LabelPoint, LabelPolygon, LabelRect, BuildingMetadata} from "../labels/types";
 import {find} from "lodash";
 import {LabelType} from "../../data/enums/LabelType";
 
@@ -18,6 +18,10 @@ export class LabelsSelector {
 
     public static getImagesData(): ImageData[] {
         return store.getState().labels.imagesData;
+    }
+
+    public static getBuildingMetadata(): BuildingMetadata {
+        return store.getState().labels.buildingMetadata;
     }
 
     public static getActiveImageIndex(): number {

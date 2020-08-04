@@ -5,13 +5,14 @@ import {ImageData, LabelPoint, LabelRect} from "../../../store/labels/types";
 import {FileUtil} from "../../../utils/FileUtil";
 import {AppState} from "../../../store";
 import {connect} from "react-redux";
-import {updateImageDataById} from "../../../store/labels/actionCreators";
+import {updateImageDataById, updateAssociations, deleteAssociation} from "../../../store/labels/actionCreators";
 import {ImageRepository} from "../../../logic/imageRepository/ImageRepository";
 import {LabelType} from "../../../data/enums/LabelType";
 import {PopupWindowType} from "../../../data/enums/PopupWindowType";
 import {CanvasUtil} from "../../../utils/CanvasUtil";
 import {CustomCursorStyle} from "../../../data/enums/CustomCursorStyle";
 import {ImageLoadManager} from "../../../logic/imageRepository/ImageLoadManager";
+import {MouseEventUtil} from "../../../utils/MouseEventUtil";
 import {EventType} from "../../../data/enums/EventType";
 import {EditorData} from "../../../data/EditorData";
 import {EditorModel} from "../../../staticModels/EditorModel";
@@ -28,6 +29,9 @@ import {RenderEngineUtil} from "../../../utils/RenderEngineUtil";
 import {LabelStatus} from "../../../data/enums/LabelStatus";
 import {isEqual} from "lodash";
 import {AIActions} from "../../../logic/actions/AIActions";
+import {store} from "../../../index";
+import {LabelsSelector} from "../../../store/selectors/LabelsSelector";
+import {BuildingMetadataUtil} from "../../../utils/BuildingMetadataUtil"
 
 interface IProps {
     size: ISize;
@@ -150,6 +154,34 @@ class Editor extends React.Component<IProps, IState> {
     };
 
     private update = (event: MouseEvent) => {
+        if (event.which === 3) {
+	   if (MouseEventUtil.getEventType(event) === EventType.MOUSE_UP) {
+	      const highlightedLabelId: string = LabelsSelector.getHighlightedLabelId();
+	      if (highlightedLabelId !== null) {
+		 // check if to delete existing association
+		 if (BuildingMetadataUtil.alreadyAssociated(highlightedLabelId)) {
+	      	    if (!window.confirm("Delete the association?")) {
+    	      	       return;
+		    } else {
+		       store.dispatch(deleteAssociation(highlightedLabelId));
+		       return;
+		    }
+		 } else {
+	           // check if any selected points available to ad new association
+		   if (!BuildingMetadataUtil.availableForAssociation()) {
+		      window.alert("No valaid footprint points to associate!");
+		      return;
+		   }
+	      	   // confirm if continue process of adding new association
+	      	   if (!window.confirm("Add the association?")) {
+    	      	      return;
+  	           }
+	      	   store.dispatch(updateAssociations(highlightedLabelId));
+		 }
+	      }
+	   }
+	   return;
+	}
         const editorData: EditorData = EditorActions.getEditorData(event);
         EditorModel.mousePositionOnViewPortContent = CanvasUtil.getMousePositionOnCanvasFromEvent(event, EditorModel.canvas);
         EditorModel.primaryRenderingEngine.update(editorData);

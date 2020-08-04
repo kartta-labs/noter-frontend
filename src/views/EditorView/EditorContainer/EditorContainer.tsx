@@ -11,6 +11,7 @@ import {SideNavigationBar} from "../SideNavigationBar/SideNavigationBar";
 import {VerticalEditorButton} from "../VerticalEditorButton/VerticalEditorButton";
 import './EditorContainer.scss';
 import Editor from "../Editor/Editor";
+import FootprintPanel from "../FootprintPanel/FootprintPanel";
 import {ContextManager} from "../../../logic/context/ContextManager";
 import {ContextType} from "../../../data/enums/ContextType";
 import EditorBottomNavigationBar from "../EditorBottomNavigationBar/EditorBottomNavigationBar";
@@ -26,7 +27,7 @@ interface IProps {
 }
 
 const EditorContainer: React.FC<IProps> = ({windowSize, activeImageIndex, imagesData, activeContext}) => {
-    const [leftTabStatus, setLeftTabStatus] = useState(true);
+    const [leftTabStatus, setLeftTabStatus] = useState(imagesData.length > 1);
     const [rightTabStatus, setRightTabStatus] = useState(true);
 
     const calculateEditorSize = (): ISize => {
@@ -93,6 +94,8 @@ const EditorContainer: React.FC<IProps> = ({windowSize, activeImageIndex, images
         return <LabelsToolkit/>
     };
 
+    if (imagesData.length === 0)
+       return null;
     return (
         <div className="EditorContainer">
             <SideNavigationBar
@@ -116,13 +119,16 @@ const EditorContainer: React.FC<IProps> = ({windowSize, activeImageIndex, images
                     totalImageCount={imagesData.length}
                 />
             </div>
-            <SideNavigationBar
-                direction={Direction.RIGHT}
-                isOpen={rightTabStatus}
-                isWithContext={activeContext === ContextType.RIGHT_NAVBAR}
-                renderCompanion={rightSideBarCompanionRender}
-                renderContent={rightSideBarRender}
-            />
+	    <div className="EditorFootprint" >
+            	 <SideNavigationBar
+			direction={Direction.RIGHT}
+                 	isOpen={rightTabStatus}
+                 	isWithContext={activeContext === ContextType.RIGHT_NAVBAR}
+                 	renderCompanion={rightSideBarCompanionRender}
+                 	renderContent={rightSideBarRender}
+            	 />
+		 <FootprintPanel/>
+	    </div>
         </div>
     );
 };

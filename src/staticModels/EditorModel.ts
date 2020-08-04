@@ -9,6 +9,7 @@ import {ViewPortHelper} from "../logic/helpers/ViewPortHelper";
 export class EditorModel {
     public static editor: HTMLDivElement;
     public static canvas: HTMLCanvasElement;
+    public static canvasFootprint: HTMLCanvasElement;
     public static mousePositionIndicator: HTMLDivElement;
     public static cursor: HTMLDivElement;
     public static viewPortScrollbars: Scrollbars;
@@ -23,6 +24,9 @@ export class EditorModel {
     public static viewPortActionsDisabled: boolean = false;
     public static mousePositionOnViewPortContent: IPoint;
     public static viewPortSize: ISize;
+    public static normalizedFootprintSize: ISize;
+    public static footprintScaleFactor: number;
+    public static footprintShift: IPoint;
 
     // x and y describe the dimension of the margin that remains constant regardless of the scale of the image
     // width and height describes the render image size for 100% scale

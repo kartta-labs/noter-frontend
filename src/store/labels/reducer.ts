@@ -1,15 +1,16 @@
-import {LabelsActionTypes, LabelsState, ImageData} from "./types";
+import {LabelsActionTypes, LabelsState, ImageData, FacadeFrontLinePair} from "./types";
 import {Action} from "../Actions";
 
 const initialState: LabelsState = {
     activeImageIndex: null,
-    activeLabelNameId: null,
+    activeLabelNameId: "facade",
     activeLabelType: null,
     activeLabelId: null,
     highlightedLabelId: null,
     imagesData: [],
     firstLabelCreatedFlag: false,
-    labels: []
+    labels: [{name: "facade", id: "facade"}],
+    buildingMetadata: {footprint: [{vertices : [{ x: 20, y: 20, isSelected: false, facadeId: null}, { x: 140, y: 20, isSelected: false, facadeId: null}, { x: 140, y: 60, isSelected: false, facadeId: null}, { x: 20, y: 60, isSelected: false, facadeId: null}]}], associations: []},
 };
 
 export function labelsReducer(
@@ -78,6 +79,50 @@ export function labelsReducer(
                 ...state,
                 firstLabelCreatedFlag: action.payload.firstLabelCreatedFlag
             }
+        }
+        case Action.UPDATE_FOOTPRINT: {
+            return {
+                ...state,
+                buildingMetadata: {
+                    ...state.buildingMetadata,
+                    footprint: action.payload.footprint
+                }
+            }
+        }
+        case Action.UPDATE_SELECTED_POINTS: {
+            let current_point =
+                state.buildingMetadata.footprint[action.payload.polygonIndex].vertices[action.payload.pointIndex];
+            let newState = JSON.parse(JSON.stringify(state));
+            newState.buildingMetadata.footprint[action.payload.polygonIndex].vertices[action.payload.pointIndex].isSelected =
+                !current_point.isSelected;
+            return newState;
+        }
+        case Action.UPDATE_ASSOCIATIONS: {
+            let newState = JSON.parse(JSON.stringify(state));
+            const facadeFrontLinePair: FacadeFrontLinePair = {facadeId: "", polygonIndex: 0, indices: []};
+            for (let i = 0; i < newState.buildingMetadata.footprint.length; ++i) {
+                for (let j = 0; j < newState.buildingMetadata.footprint[i].vertices.length; ++j) {
+                    if (newState.buildingMetadata.footprint[i].vertices[j].isSelected) {
+                        newState.buildingMetadata.footprint[i].vertices[j].isSelected = false;
+                        facadeFrontLinePair.polygonIndex = i;
+                        facadeFrontLinePair.indices.push(j);
+                    }
+                }
+            }
+            facadeFrontLinePair.facadeId =  action.payload.facadeId;
+            newState.buildingMetadata.associations.push(facadeFrontLinePair);
+            return newState;
+        }
+        case Action.DELETE_ASSOCIATION: {
+            let newState = JSON.parse(JSON.stringify(state));
+            for (let i = 0; i < newState.buildingMetadata.associations.length; ++i) {
+                if (newState.buildingMetadata.associations[i].facadeId === action.payload.facadeId) {
+                    newState.buildingMetadata.associations.splice(i, 1);
+                    console.log("delete the association!!!");
+                    return newState;
+                }
+            }
+            return newState;
         }
         default:
             return state;

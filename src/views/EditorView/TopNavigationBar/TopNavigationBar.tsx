@@ -45,43 +45,22 @@ const TopNavigationBar: React.FC<IProps> = ({updateActivePopupType, updateProjec
                     >
                         <img
                             draggable={false}
-                            alt={"make-sense"}
-                            src={"/make-sense-ico-transparent.png"}
+                            alt={"re"}
+                            src={"/re.png"}
                         />
-                        Make Sense
+                        Noter
                     </div>
                 </div>
                 <div className="NavigationBarGroupWrapper">
-                    <div className="ProjectName">Project Name:</div>
-                    <TextInput
-                        key={"ProjectName"}
-                        isPassword={false}
-                        value={projectData.name}
-                        onChange={onChange}
-                        onFocus={onFocus}
-                    />
-                </div>
-                <div className="NavigationBarGroupWrapper">
                     <UnderlineTextButton
-                        label={"UPDATE LABELS NAMES"}
-                        under={true}
-                        onClick={() => updateActivePopupType(PopupWindowType.UPDATE_LABEL_NAMES)}
-                    />
-                    <UnderlineTextButton
-                        label={"MORE IMAGES"}
+                        label={"Upload Image"}
                         under={true}
                         onClick={() => updateActivePopupType(PopupWindowType.LOAD_IMAGES)}
                     />
                     <UnderlineTextButton
-                        label={"UPLOAD"}
+                        label={"Save Annotations"}
                         under={true}
                         onClick={() => {Uploader.uploadAll()}}
-                    />
-                    <ImageButton
-                        image={"img/github-logo.png"}
-                        imageAlt={"github-logo.png"}
-                        buttonSize={{width: 30, height: 30}}
-                        href={Settings.GITHUB_URL}
                     />
                 </div>
             </div>

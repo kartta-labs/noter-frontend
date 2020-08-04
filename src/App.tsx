@@ -24,12 +24,15 @@ const App: React.FC<IProps> = ({projectType, windowSize, ObjectDetectorLoaded, P
     const selectRoute = () => {
         if (!!PlatformModel.mobileDeviceData.manufacturer && !!PlatformModel.mobileDeviceData.os)
             return <MobileMainView/>;
-        if (!projectType)
+        if (!projectType) {
+	    console.log("return MainView");
             return <MainView/>;
+	    }
         else {
             if (windowSize.height < Settings.EDITOR_MIN_HEIGHT || windowSize.width < Settings.EDITOR_MIN_WIDTH) {
                 return <SizeItUpView/>;
             } else {
+	        console.log("return EditorView");
                 return <EditorView/>;
             }
         }
@@ -39,8 +42,8 @@ const App: React.FC<IProps> = ({projectType, windowSize, ObjectDetectorLoaded, P
         <div className={classNames("App", {"AI": ObjectDetectorLoaded || PoseDetectionLoaded})}
             draggable={false}
         >
-            {selectRoute()}
-            <PopupView/>
+            <EditorView/>
+	    <PopupView/>
         </div>
       );
 };

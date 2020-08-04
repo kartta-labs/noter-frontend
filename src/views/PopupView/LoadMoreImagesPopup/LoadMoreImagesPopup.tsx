@@ -2,7 +2,7 @@ import React from 'react'
 import './LoadMoreImagesPopup.scss'
 import {AppState} from "../../../store";
 import {connect} from "react-redux";
-import {addImageData} from "../../../store/labels/actionCreators";
+import {addImageData, updateActiveImageIndex} from "../../../store/labels/actionCreators";
 import {GenericYesNoPopup} from "../GenericYesNoPopup/GenericYesNoPopup";
 import {useDropzone} from "react-dropzone";
 import {FileUtil} from "../../../utils/FileUtil";
@@ -11,16 +11,18 @@ import {AcceptedFileType} from "../../../data/enums/AcceptedFileType";
 import {PopupActions} from "../../../logic/actions/PopupActions";
 
 interface IProps {
+    updateActiveImageIndex: (activeImageIndex: number) => any;
     addImageData: (imageData: ImageData[]) => any;
 }
 
-const LoadMoreImagesPopup: React.FC<IProps> = ({addImageData}) => {
+const LoadMoreImagesPopup: React.FC<IProps> = ({updateActiveImageIndex, addImageData}) => {
     const {acceptedFiles, getRootProps, getInputProps} = useDropzone({
         accept: AcceptedFileType.IMAGE
     });
 
     const onAccept = () => {
         if (acceptedFiles.length > 0) {
+	    updateActiveImageIndex(0);
             addImageData(acceptedFiles.map((fileData:File) => FileUtil.mapFileDataToImageData(fileData)));
             PopupActions.close();
         }
@@ -86,6 +88,7 @@ const LoadMoreImagesPopup: React.FC<IProps> = ({addImageData}) => {
 };
 
 const mapDispatchToProps = {
+    updateActiveImageIndex,
     addImageData
 };
 

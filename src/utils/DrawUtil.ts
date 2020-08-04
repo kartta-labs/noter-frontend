@@ -1,5 +1,5 @@
 
-import {IPoint} from "../interfaces/IPoint";
+import {IPoint, IGeoPoint} from "../interfaces/IPoint";
 import {IRect} from "../interfaces/IRect";
 import {UnitUtil} from "./UnitUtil";
 
@@ -116,6 +116,46 @@ export class DrawUtil {
         ctx.textBaseline="middle";
         ctx.font = (bold ? "bold " : "") + textSize + "px Arial";
         ctx.fillText(text, anchorPoint.x, anchorPoint.y);
+        ctx.restore();
+    }
+    public static drawFootprint(canvas:HTMLCanvasElement, anchors: IGeoPoint[], activeFacadeId = null): void {
+        let ctx:CanvasRenderingContext2D = canvas.getContext('2d');
+        ctx.save();
+        for (let i = 0; i < anchors.length; i ++) {
+            let next = (i + 1) % anchors.length;
+            ctx.beginPath();
+            if (anchors[i].facadeId !== null && anchors[next].facadeId !==null) {
+                if (activeFacadeId !== null && anchors[i].facadeId === activeFacadeId
+                    && anchors[next].facadeId === activeFacadeId) {
+                    ctx.strokeStyle = "red";
+                    ctx.lineWidth = 5;
+                } else {
+                    ctx.strokeStyle = "red";
+                    ctx.lineWidth = 3;
+                }
+            }
+            else {
+                ctx.strokeStyle = "blue";
+                ctx.lineWidth = 3;
+            }
+            ctx.moveTo(anchors[i].x, anchors[i].y);
+            ctx.lineTo(anchors[next].x, anchors[next].y);
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+    public static drawPolyline(canvas:HTMLCanvasElement, anchors: IPoint[], color:string = "#fff", thickness:number = 1): void {
+        let ctx:CanvasRenderingContext2D = canvas.getContext('2d');
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = thickness;
+        ctx.beginPath();
+        ctx.moveTo(anchors[0].x, anchors[0].y);
+        for (let i = 1; i < anchors.length; i ++) {
+            ctx.lineTo(anchors[i].x, anchors[i].y);
+        }
+        ctx.stroke();
         ctx.restore();
     }
 
