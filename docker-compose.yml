@@ -1,0 +1,13 @@
+version: "3"
+
+services:
+  noter-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: noter-frontend
+    ports:
+      - "8081:3000"
+    volumes:
+      - ./src:/app/src
+    entrypoint: ["npm", "start"]
