@@ -10,7 +10,7 @@ const initialState: LabelsState = {
     imagesData: [],
     firstLabelCreatedFlag: false,
     labels: [{name: "facade", id: "facade"}],
-    buildingMetadata: {footprint: [{vertices : [{ x: 20, y: 20, isSelected: false, facadeId: null}, { x: 140, y: 20, isSelected: false, facadeId: null}, { x: 140, y: 60, isSelected: false, facadeId: null}, { x: 20, y: 60, isSelected: false, facadeId: null}]}], associations: []},
+    buildingMetadata: {footprint: [], associations: []},
 };
 
 export function labelsReducer(
@@ -19,10 +19,20 @@ export function labelsReducer(
 ): LabelsState {
     switch (action.type) {
         case Action.UPDATE_ACTIVE_IMAGE_INDEX: {
-            return {
+            const currentActiveImageIndex = state.activeImageIndex;
+            let newState = {
                 ...state,
                 activeImageIndex: action.payload.activeImageIndex
             }
+            if (currentActiveImageIndex !== null && currentActiveImageIndex != action.payload.activeImageIndex) {
+                newState.imagesData[currentActiveImageIndex].buildingMetadata =
+                    JSON.parse(JSON.stringify(newState.buildingMetadata));
+            }
+            if (newState.imagesData.length > 0) {
+                newState.buildingMetadata = JSON.parse(JSON.stringify(
+                    newState.imagesData[action.payload.activeImageIndex].buildingMetadata));
+            }
+            return newState;
         }
         case Action.UPDATE_ACTIVE_LABEL_NAME_ID: {
             return {
@@ -59,6 +69,7 @@ export function labelsReducer(
         case Action.ADD_IMAGES_DATA: {
             return {
                 ...state,
+                activeImageIndex: 0,
                 imagesData: state.imagesData.concat(action.payload.imageData)
             }
         }
@@ -92,13 +103,19 @@ export function labelsReducer(
         case Action.UPDATE_SELECTED_POINTS: {
             let current_point =
                 state.buildingMetadata.footprint[action.payload.polygonIndex].vertices[action.payload.pointIndex];
-            let newState = JSON.parse(JSON.stringify(state));
+            let newState = {
+                              ...state
+                };
+            newState.buildingMetadata = JSON.parse(JSON.stringify(state.buildingMetadata));
             newState.buildingMetadata.footprint[action.payload.polygonIndex].vertices[action.payload.pointIndex].isSelected =
                 !current_point.isSelected;
             return newState;
         }
         case Action.UPDATE_ASSOCIATIONS: {
-            let newState = JSON.parse(JSON.stringify(state));
+            let newState = {
+                              ...state
+                }
+            newState.buildingMetadata = JSON.parse(JSON.stringify(state.buildingMetadata));
             const facadeFrontLinePair: FacadeFrontLinePair = {facadeId: "", polygonIndex: 0, indices: []};
             for (let i = 0; i < newState.buildingMetadata.footprint.length; ++i) {
                 for (let j = 0; j < newState.buildingMetadata.footprint[i].vertices.length; ++j) {
@@ -114,7 +131,10 @@ export function labelsReducer(
             return newState;
         }
         case Action.DELETE_ASSOCIATION: {
-            let newState = JSON.parse(JSON.stringify(state));
+            let newState = {
+                              ...state
+                }
+            newState.buildingMetadata = JSON.parse(JSON.stringify(state.buildingMetadata));
             for (let i = 0; i < newState.buildingMetadata.associations.length; ++i) {
                 if (newState.buildingMetadata.associations[i].facadeId === action.payload.facadeId) {
                     newState.buildingMetadata.associations.splice(i, 1);

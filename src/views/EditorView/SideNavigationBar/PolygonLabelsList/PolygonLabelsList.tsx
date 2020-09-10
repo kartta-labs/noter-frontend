@@ -14,6 +14,7 @@ import LabelInputField from "../LabelInputField/LabelInputField";
 import EmptyLabelList from "../EmptyLabelList/EmptyLabelList";
 import {LabelActions} from "../../../../logic/actions/LabelActions";
 import {findLast} from "lodash";
+import {LabelsSelector} from "../../../../store/selectors/LabelsSelector";
 
 interface IProps {
     size: ISize;
@@ -38,6 +39,16 @@ const PolygonLabelsList: React.FC<IProps> = ({size, imageData, updateImageDataBy
     };
 
     const deletePolygonLabelById = (labelPolygonId: string) => {
+        // check if current polygon is associated with footprint.
+	// If so, alert user to delete the association first
+	const associations = LabelsSelector.getBuildingMetadata().associations;
+	const oneAssociation = findLast(associations, (association) => {
+	      return association.facadeId === labelPolygonId;
+	});
+	if (!!oneAssociation) {
+	   window.alert("The current polygon has association, please delete it first!");
+	   return;
+	}
         LabelActions.deletePolygonLabelById(imageData.id, labelPolygonId);
     };
 

@@ -11,11 +11,6 @@ interface IProps {
 
 const EmptyLabelList: React.FC<IProps> = ({firstLabelCreatedFlag, labelBefore, labelAfter}) => {
     const before = <>
-        <img
-            draggable={false}
-            alt={"lets_start"}
-            src={"img/rocket.png"}
-        />
         <p className="extraBold">{labelBefore}</p>
     </>;
 

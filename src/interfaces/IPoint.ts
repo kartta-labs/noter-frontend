@@ -7,5 +7,5 @@ export interface IGeoPoint {
     x:number,
     y:number,
     isSelected:boolean,
-    facadeId:string
+    nodeId:string
 }

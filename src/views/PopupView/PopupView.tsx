@@ -10,6 +10,7 @@ import ExitProjectPopup from "./ExitProjectPopup/ExitProjectPopup";
 import LoadMoreImagesPopup from "./LoadMoreImagesPopup/LoadMoreImagesPopup";
 import {LoadModelPopup} from "./LoadModelPopup/LoadModelPopup";
 import SuggestLabelNamesPopup from "./SuggestLabelNamesPopup/SuggestLabelNamesPopup";
+import EditImageMetadataPopup from "./EditImageMetadataPopup/EditImageMetadataPopup";
 import {CSSHelper} from "../../logic/helpers/CSSHelper";
 import {ClipLoader} from "react-spinners";
 
@@ -48,6 +49,8 @@ const PopupView: React.FC<IProps> = ({activePopupType}) => {
                     color={CSSHelper.getLeadingColor()}
                     loading={true}
                 />;
+	    case PopupWindowType.EDIT_IMAGE_METADATA:
+	    	return <EditImageMetadataPopup/>;
             default:
                 return null;
         }

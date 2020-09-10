@@ -46,7 +46,7 @@ const TopNavigationBar: React.FC<IProps> = ({updateActivePopupType, updateProjec
                         <img
                             draggable={false}
                             alt={"re"}
-                            src={"/re.png"}
+                            src={"re.png"}
                         />
                         Noter
                     </div>

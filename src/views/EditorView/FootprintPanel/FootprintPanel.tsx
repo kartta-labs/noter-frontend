@@ -127,6 +127,11 @@ class FootprintPanel extends React.Component<IProps, IState> {
 	DrawUtil.clearCanvas(EditorModel.canvasFootprint);
 	// resize the footprint properly before drawing it
 	const {buildingMetadata} = this.props;
+	// make sure the footprint data is available
+	if (buildingMetadata.footprint.length == 0) {
+	   console.log("footprint data is not ready yet!");
+	   return;
+	}
 	const footprint = BuildingMetadataUtil.resizeFootprint(buildingMetadata.footprint, footprintViewPortSize);
 	// draw each polygon in blue
 	for (let i = 0; i < footprint.length; ++i) {

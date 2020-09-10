@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react'
 import './GenericYesNoPopup.scss'
 import {TextButton} from "../../Common/TextButton/TextButton";
+import {Checkbox} from "../../Common/Checkbox";
 import {ContextManager} from "../../../logic/context/ContextManager";
 import {ContextType} from "../../../data/enums/ContextType";
 
@@ -15,6 +16,7 @@ interface IProps {
     onReject?: () => any;
     skipRejectButton?: boolean;
     disableRejectButton?: boolean;
+    onCheckbox?: (boolean) => any;
 }
 
 export const GenericYesNoPopup: React.FC<IProps> = (
@@ -28,7 +30,8 @@ export const GenericYesNoPopup: React.FC<IProps> = (
         rejectLabel,
         onReject,
         skipRejectButton,
-        disableRejectButton
+        disableRejectButton,
+	onCheckbox
     }) => {
     
     const [status, setMountStatus] = useState(false);
@@ -48,6 +51,11 @@ export const GenericYesNoPopup: React.FC<IProps> = (
                 {renderContent()}
             </div>
             <div className="Footer">
+	    	{
+	        <Checkbox
+      		    label={"Public"}
+      		    handleCheckboxChange={onCheckbox}
+    		/>}
                 {!skipAcceptButton && <TextButton
                     label={!!acceptLabel ? acceptLabel : "YES"}
                     onClick={onAccept}

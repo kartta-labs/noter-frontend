@@ -27,8 +27,9 @@ interface IProps {
 }
 
 const EditorContainer: React.FC<IProps> = ({windowSize, activeImageIndex, imagesData, activeContext}) => {
-    const [leftTabStatus, setLeftTabStatus] = useState(imagesData.length > 1);
+    const [leftTabStatus, setLeftTabStatus] = useState(false);
     const [rightTabStatus, setRightTabStatus] = useState(true);
+    const [autoUpdateLeft, setAutoUpdateLeft] = useState(false);
 
     const calculateEditorSize = (): ISize => {
         if (windowSize) {
@@ -57,7 +58,7 @@ const EditorContainer: React.FC<IProps> = ({windowSize, activeImageIndex, images
         return <>
             <VerticalEditorButton
                 label="Images"
-                image={"/ico/files.png"}
+                image={"ico/files.png"}
                 imageAlt={"images"}
                 onClick={leftSideBarButtonOnClick}
                 isActive={leftTabStatus}
@@ -82,7 +83,7 @@ const EditorContainer: React.FC<IProps> = ({windowSize, activeImageIndex, images
         return <>
             <VerticalEditorButton
                 label="Labels"
-                image={"/ico/tags.png"}
+                image={"ico/tags.png"}
                 imageAlt={"labels"}
                 onClick={rightSideBarButtonOnClick}
                 isActive={rightTabStatus}
@@ -94,8 +95,16 @@ const EditorContainer: React.FC<IProps> = ({windowSize, activeImageIndex, images
         return <LabelsToolkit/>
     };
 
-    if (imagesData.length === 0)
+    if (imagesData.length === 0) {
        return null;
+    }
+
+    if (!autoUpdateLeft) {
+        if (imagesData.length > 1)
+	   setLeftTabStatus(true);
+	setAutoUpdateLeft(true);
+    }
+
     return (
         <div className="EditorContainer">
             <SideNavigationBar

@@ -3,7 +3,9 @@ import './LoadMoreImagesPopup.scss'
 import {AppState} from "../../../store";
 import {connect} from "react-redux";
 import {addImageData, updateActiveImageIndex} from "../../../store/labels/actionCreators";
+import {updateActivePopupType} from "../../../store/general/actionCreators";
 import {GenericYesNoPopup} from "../GenericYesNoPopup/GenericYesNoPopup";
+import {PopupWindowType} from "../../../data/enums/PopupWindowType";
 import {useDropzone} from "react-dropzone";
 import {FileUtil} from "../../../utils/FileUtil";
 import {ImageData} from "../../../store/labels/types";
@@ -13,18 +15,25 @@ import {PopupActions} from "../../../logic/actions/PopupActions";
 interface IProps {
     updateActiveImageIndex: (activeImageIndex: number) => any;
     addImageData: (imageData: ImageData[]) => any;
+    updateActivePopupType: (activePopupType: PopupWindowType) => any;
 }
 
-const LoadMoreImagesPopup: React.FC<IProps> = ({updateActiveImageIndex, addImageData}) => {
+const LoadMoreImagesPopup: React.FC<IProps> = ({updateActiveImageIndex, addImageData, updateActivePopupType}) => {
     const {acceptedFiles, getRootProps, getInputProps} = useDropzone({
         accept: AcceptedFileType.IMAGE
     });
 
+    let isUploadPublic = true;
+    const onCheckbox = (selection) => {
+    	isUploadPublic = selection;
+	console.log(isUploadPublic);
+    };
     const onAccept = () => {
         if (acceptedFiles.length > 0) {
 	    updateActiveImageIndex(0);
             addImageData(acceptedFiles.map((fileData:File) => FileUtil.mapFileDataToImageData(fileData)));
             PopupActions.close();
+	    updateActivePopupType(PopupWindowType.EDIT_IMAGE_METADATA);
         }
     };
 
@@ -83,13 +92,15 @@ const LoadMoreImagesPopup: React.FC<IProps> = ({updateActiveImageIndex, addImage
             onAccept={onAccept}
             rejectLabel={"Cancel"}
             onReject={onReject}
+	    onCheckbox={onCheckbox}
         />
     );
 };
 
 const mapDispatchToProps = {
     updateActiveImageIndex,
-    addImageData
+    addImageData,
+    updateActivePopupType
 };
 
 const mapStateToProps = (state: AppState) => ({});

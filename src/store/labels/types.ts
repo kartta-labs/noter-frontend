@@ -45,21 +45,33 @@ export type LabelName = {
     name: string;
     id: string;
 }
+export type UrlFile = {
+    name: string;
+    url: string;
+    size: number;
+}
 
 export type ImageData = {
 
     id: string;
-    fileData: File;
+    fileData: File|UrlFile;
     loadStatus: boolean;
     labelRects: LabelRect[];
     labelPoints: LabelPoint[];
     labelLines: LabelLine[];
     labelPolygons: LabelPolygon[];
+    buildingMetadata: BuildingMetadata;
 
     // Response from the backend for uploading this image, if exists.
     uploadResponse: any;
     // Response from the backend for uploading the annotations of this image, if exists.
     annotationsResponse: any;
+    // Response from the backend for uploading the associations between this image and
+    // the global footprint. This information is used to delete the old association upload
+    // before uploading the current new asscoaitions.
+    associationsResponse: any;
+    // This is used to check if current associations should be uploaded or not.
+    lastUploadedAssociations: FacadeFrontLinePair[];
 
     // SSD
     isVisitedByObjectDetector: boolean;

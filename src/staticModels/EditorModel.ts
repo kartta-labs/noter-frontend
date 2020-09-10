@@ -27,6 +27,7 @@ export class EditorModel {
     public static normalizedFootprintSize: ISize;
     public static footprintScaleFactor: number;
     public static footprintShift: IPoint;
+    public static footprintId: string;
 
     // x and y describe the dimension of the margin that remains constant regardless of the scale of the image
     // width and height describes the render image size for 100% scale
