@@ -36,7 +36,9 @@ export class PolygonLabelsExporter {
         return imagesData.reduce((data: VGGObject, image: ImageData) => {
             const fileData: VGGFileData = PolygonLabelsExporter.mapImageDataToVGGFileData(image, labelNames);
             if (!!fileData) {
-                data[image.fileData.name] = fileData
+                // at this time, the imageData should have image uploading
+                // response ready
+                data[image.uploadResponse.data.id] = fileData
             }
             return data;
         }, {});
@@ -46,9 +48,11 @@ export class PolygonLabelsExporter {
         const regionsData: VGGRegionsData = PolygonLabelsExporter.mapImageDataToVGG(imageData, labelNames);
         if (!regionsData) return null;
         return {
+            // only make region data meaningful to ease the comparison when reading the
+            // annotation from database
             fileref: "",
-            size: imageData.fileData.size,
-            filename: "",//imageData.fileData.name,
+            size: 1000,
+            filename: "",
             base64_img_data: "",
             file_attributes: {},
             regions: regionsData

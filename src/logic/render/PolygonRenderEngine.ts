@@ -151,12 +151,15 @@ export class PolygonRenderEngine extends BaseRenderEngine {
 
     public render(data: EditorData): void {
         const imageData: ImageData = LabelsSelector.getActiveImageData();
-        if (imageData) {
+        if (imageData && data.realImageSize && data.viewPortContentImageRect) {
             this.drawExistingLabels(data);
             this.drawActivelyCreatedLabel(data);
             this.drawActivelyResizeLabel(data);
             this.updateCursorStyle(data);
             this.drawSuggestedAnchor(data);
+        } else {
+          console.log("EditorData not fully ready!");
+          console.log(data)
         }
     }
 

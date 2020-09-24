@@ -53,12 +53,12 @@ const TopNavigationBar: React.FC<IProps> = ({updateActivePopupType, updateProjec
                 </div>
                 <div className="NavigationBarGroupWrapper">
                     <UnderlineTextButton
-                        label={"Upload Image"}
+                        label={"Add Image"}
                         under={true}
                         onClick={() => updateActivePopupType(PopupWindowType.LOAD_IMAGES)}
                     />
                     <UnderlineTextButton
-                        label={"Save Annotations"}
+                        label={"Save"}
                         under={true}
                         onClick={() => {Uploader.uploadAll()}}
                     />

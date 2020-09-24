@@ -12,34 +12,15 @@
 import React from 'react';
 import './FootprintPanel.scss';
 import {ISize} from "../../../interfaces/ISize";
-import {ImageData, LabelPoint, LabelRect, BuildingMetadata} from "../../../store/labels/types";
-import {FileUtil} from "../../../utils/FileUtil";
+import {BuildingMetadata} from "../../../store/labels/types";
 import {AppState} from "../../../store";
 import {connect} from "react-redux";
 import {updateSelectdPoints} from "../../../store/labels/actionCreators";
-import {ImageRepository} from "../../../logic/imageRepository/ImageRepository";
-import {LabelType} from "../../../data/enums/LabelType";
-import {PopupWindowType} from "../../../data/enums/PopupWindowType";
 import {CanvasUtil} from "../../../utils/CanvasUtil";
 import {RectUtil} from "../../../utils//RectUtil";
-import {CustomCursorStyle} from "../../../data/enums/CustomCursorStyle";
-import {ImageLoadManager} from "../../../logic/imageRepository/ImageLoadManager";
 import {EventType} from "../../../data/enums/EventType";
-import {EditorData} from "../../../data/EditorData";
 import {EditorModel} from "../../../staticModels/EditorModel";
-import {EditorActions} from "../../../logic/actions/EditorActions";
-import {EditorUtil} from "../../../utils/EditorUtil";
-import {ContextManager} from "../../../logic/context/ContextManager";
-import {ContextType} from "../../../data/enums/ContextType";
-import Scrollbars from 'react-custom-scrollbars';
-import {ViewPortActions} from "../../../logic/actions/ViewPortActions";
-import {PlatformModel} from "../../../staticModels/PlatformModel";
-import LabelControlPanel from "../LabelControlPanel/LabelControlPanel";
 import {IPoint} from "../../../interfaces/IPoint";
-import {RenderEngineUtil} from "../../../utils/RenderEngineUtil";
-import {LabelStatus} from "../../../data/enums/LabelStatus";
-import {isEqual} from "lodash";
-import {AIActions} from "../../../logic/actions/AIActions";
 import {DrawUtil} from "../../../utils/DrawUtil";
 import {BuildingMetadataUtil} from "../../../utils/BuildingMetadataUtil";
 import {Settings} from "../../../settings/Settings";
@@ -87,32 +68,69 @@ class FootprintPanel extends React.Component<IProps, IState> {
     private unmountEventListeners() {
         window.removeEventListener(EventType.MOUSE_UP, this.update);
     }
-    
+
     private distanceBetweenPoints = (p1: IPoint, p2: IPoint) => {
         return Math.abs(Math.sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y)));
     }
-    
+
+    private distanceToLineSegment = (p: IPoint, p1: IPoint, p2: IPoint) => {
+        return Math.abs((p2.y - p1.y)*p.x - (p2.x - p1.x)*p.y + p2.x*p1.y - p2.y*p1.x) / this.distanceBetweenPoints(p1, p2);
+    }
+
+    private distanceToSegmentEnds = (p: IPoint, p1: IPoint, p2: IPoint) => {
+        return this.distanceBetweenPoints(p, p1) + this.distanceBetweenPoints(p, p2);
+    }
+    private isAssociated(buildingMetadata, polyIndex: number, index: number) {
+    	var found = false;
+	for (let i = 0; i < buildingMetadata.associations.length; ++i) {
+	    const onePair = buildingMetadata.associations[i];
+	    const polygonIndex = onePair.polygonIndex;
+	    if (polygonIndex !== polyIndex) {
+	        continue;
+	    }
+	    for (let j = 0; j < onePair.indices.length; ++j) {
+	    	const pointIndex = onePair.indices[j];
+	    	if (pointIndex === index) {
+		  found = true;
+		}
+	    }
+	}
+	return found;
+    }
     private update = (event: MouseEvent) => {
         const mousePosition = CanvasUtil.getMousePositionOnCanvasFromEvent(event, EditorModel.canvasFootprint);
 	if (RectUtil.isPointInside({x: 0, y: 0, width: EditorModel.canvasFootprint.width,
 	   			    height: EditorModel.canvasFootprint.height}, mousePosition)) {
 	   const {buildingMetadata} = this.props;
 	   const footprint = buildingMetadata.footprint;
-	   var miniDist = this.distanceBetweenPoints(mousePosition,
-						     BuildingMetadataUtil.resizeOnePoint(footprint[0].vertices[0]));
+	   var miniDist = this.distanceToSegmentEnds(mousePosition,
+						     BuildingMetadataUtil.resizeOnePoint(footprint[0].vertices[0]),
+						     BuildingMetadataUtil.resizeOnePoint(footprint[0].vertices[1]));
+	   // here each line is represneted by its starting index (e.g. 0 reprents the line [0, 1])
 	   var polygonIndex = 0, pointIndex = 0;
+	   var foundCloseEnough = false;
 	   for (let i = 0; i < footprint.length; ++i) {
 	       for (let j = 0; j < footprint[i].vertices.length; ++j) {
-	       	   const dist = this.distanceBetweenPoints(mousePosition,
-							   BuildingMetadataUtil.resizeOnePoint(footprint[i].vertices[j]));
-	       	   if (dist < miniDist) {
+	           const next = (j+1) % footprint[i].vertices.length;
+	           // first check if this line has been associated or not
+		   if (this.isAssociated(buildingMetadata, polygonIndex, j)) {
+		       continue;
+		   }
+		   const p1 = BuildingMetadataUtil.resizeOnePoint(footprint[i].vertices[j]);
+		   const p2 = BuildingMetadataUtil.resizeOnePoint(footprint[i].vertices[next]);
+	       	   const penpendicularDist = this.distanceToLineSegment(mousePosition, p1, p2);
+		   if (penpendicularDist < 6) {
+		     foundCloseEnough = true;
+		     const dist = this.distanceToSegmentEnds(mousePosition, p1, p2);
+	       	     if (dist < miniDist) {
 		       miniDist = dist;
 		       polygonIndex = i;
 		       pointIndex = j;
+		     }
 		   }
 	       }
 	   }
-	   if (miniDist < 6) {
+	   if (foundCloseEnough) {
 	      this.props.updateSelectdPoints(polygonIndex, pointIndex);
 	   }
 	}
@@ -128,7 +146,7 @@ class FootprintPanel extends React.Component<IProps, IState> {
 	// resize the footprint properly before drawing it
 	const {buildingMetadata} = this.props;
 	// make sure the footprint data is available
-	if (buildingMetadata.footprint.length == 0) {
+	if (buildingMetadata.footprint.length === 0) {
 	   console.log("footprint data is not ready yet!");
 	   return;
 	}
@@ -137,16 +155,27 @@ class FootprintPanel extends React.Component<IProps, IState> {
 	for (let i = 0; i < footprint.length; ++i) {
 	    	DrawUtil.drawPolygon(EditorModel.canvasFootprint, footprint[i].vertices, 'blue', 3);
 	}
+	// draw all the selected edges in green (will further overwritten as red if it's associated with facade)
+	for (let i = 0; i < footprint.length; ++i) {
+	    for (let j = 0; j < footprint[i].vertices.length; ++j) {
+	    	if (footprint[i].vertices[j].isSelected) {
+		   const nextIndex = (j + 1) % footprint[i].vertices.length;
+	       	   DrawUtil.drawLine(EditorModel.canvasFootprint, footprint[i].vertices[j], footprint[i].vertices[nextIndex],
+		                     'green', 3);
+	       }
+	    }
+	}
 	// draw all associated edges in red
 	for (let i = 0; i < buildingMetadata.associations.length; ++i) {
 	    const onePair = buildingMetadata.associations[i];
 	    const polygonIndex = onePair.polygonIndex;
-	    const associatedEdgePoints = [];
 	    for (let j = 0; j < onePair.indices.length; ++j) {
 	    	const pointIndex = onePair.indices[j];
-	    	associatedEdgePoints.push(footprint[polygonIndex].vertices[pointIndex]);
+		const nextIndex = (pointIndex + 1) % footprint[polygonIndex].vertices.length;
+		DrawUtil.drawLine(EditorModel.canvasFootprint,
+	    		footprint[polygonIndex].vertices[pointIndex],
+			footprint[polygonIndex].vertices[nextIndex], 'yellow', 3);
 	    }
-	    DrawUtil.drawPolyline(EditorModel.canvasFootprint, associatedEdgePoints, 'red', 3);
 	}
 	// draw the associated edges for highligted image annotation in thicker red
 	if (this.props.highlightedLabelId !== null) {
@@ -155,24 +184,21 @@ class FootprintPanel extends React.Component<IProps, IState> {
 	       if (onePair.facadeId !== this.props.highlightedLabelId)
 	           continue;
 	       const polygonIndex = onePair.polygonIndex;
-	       const associatedEdgePoints = [];
 	       for (let j = 0; j < onePair.indices.length; ++j) {
 	    	   const pointIndex = onePair.indices[j];
-	    	   associatedEdgePoints.push(footprint[polygonIndex].vertices[pointIndex]);
-	       }
-	       DrawUtil.drawPolyline(EditorModel.canvasFootprint, associatedEdgePoints, 'red', 5);
-	    }
-	}
-	// draw all the points in different colors properly
-	for (let i = 0; i < footprint.length; ++i) {
-	    for (let j = 0; j < footprint[i].vertices.length; ++j) {
-	    	if (footprint[i].vertices[j].isSelected) {
-	       	   DrawUtil.drawCircleWithFill(EditorModel.canvasFootprint, footprint[i].vertices[j], 6, 'red');
-	       } else {
-	       	   DrawUtil.drawCircleWithFill(EditorModel.canvasFootprint, footprint[i].vertices[j], 6, 'green');
+		   const nextIndex = (pointIndex + 1) % footprint[polygonIndex].vertices.length;
+	    	   DrawUtil.drawLine(EditorModel.canvasFootprint,
+	    		footprint[polygonIndex].vertices[pointIndex],
+			footprint[polygonIndex].vertices[nextIndex], 'red', 5);
 	       }
 	    }
 	}
+        // draw all the vertices to split the edges
+        for (let i = 0; i < footprint.length; ++i) {
+            for (let j = 0; j < footprint[i].vertices.length; ++j) {
+            	DrawUtil.drawCircleWithFill(EditorModel.canvasFootprint, footprint[i].vertices[j], 3, 'white');
+            }
+        }
     }
 
     private calculateFootprintViewPortSize = (): ISize => {

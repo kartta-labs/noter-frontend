@@ -16,6 +16,7 @@ interface IProps {
     onReject?: () => any;
     skipRejectButton?: boolean;
     disableRejectButton?: boolean;
+    skipCheckbox?: boolean;
     onCheckbox?: (boolean) => any;
 }
 
@@ -31,6 +32,7 @@ export const GenericYesNoPopup: React.FC<IProps> = (
         onReject,
         skipRejectButton,
         disableRejectButton,
+	skipCheckbox,
 	onCheckbox
     }) => {
     
@@ -51,8 +53,7 @@ export const GenericYesNoPopup: React.FC<IProps> = (
                 {renderContent()}
             </div>
             <div className="Footer">
-	    	{
-	        <Checkbox
+	    	{!skipCheckbox && <Checkbox
       		    label={"Public"}
       		    handleCheckboxChange={onCheckbox}
     		/>}

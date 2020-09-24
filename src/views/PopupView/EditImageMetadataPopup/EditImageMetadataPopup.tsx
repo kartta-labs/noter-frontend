@@ -10,7 +10,7 @@ import Scrollbars from 'react-custom-scrollbars';
 import TextInput from "../../Common/TextInput/TextInput";
 import {ImageButton} from "../../Common/ImageButton/ImageButton";
 import uuidv1 from 'uuid/v1';
-import {LabelName} from "../../../store/labels/types";
+import {LabelName, ImageData} from "../../../store/labels/types";
 import {LabelUtil} from "../../../utils/LabelUtil";
 import {LabelsSelector} from "../../../store/selectors/LabelsSelector";
 import {LabelActions} from "../../../logic/actions/LabelActions";
@@ -22,11 +22,11 @@ interface IProps {
 
 const EditImageMetadataPopup: React.FC<IProps> = ({updateActivePopupType, updateLabelNames}) => {
     const [imageMetadata, setImageMetadata] = useState({
-    	"reference link": "",
-	"street address": "",
-	"latitude": "",
-	"longitude": "",
-	"other info": ""
+	"Street address": "",
+	"Date(YYYY or YYYY-MM-DD)": "",
+	"Reference link": "",
+	"Latitude/Longitude": "",
+	"Other info": ""
     });
 
     const imageMetadataInputs = Object.keys(imageMetadata).map((key: string) => {
@@ -47,6 +47,26 @@ const EditImageMetadataPopup: React.FC<IProps> = ({updateActivePopupType, update
     };
 
     const onUpdateAccept = () => {
+        // save the image metadata to the last imageData, which is just put there before this popup window is triggered
+	const imagesData: ImageData[] = LabelsSelector.getImagesData();
+	let metadata = {
+	  address: imageMetadata["Street address"],
+	  date: imageMetadata["Date(YYYY or YYYY-MM-DD)"],
+	  reference: imageMetadata["Reference link"],
+	  latlong: imageMetadata["Latitude/Longitude"],
+	  other: imageMetadata["Other info"]
+	}
+	if (imagesData.length > 1) {
+	  let toUpdate = false;
+	  Object.keys(metadata).forEach((key) => {
+            if (metadata[key].length > 0) {
+	      toUpdate = true;
+	    }
+	  })
+	  if (toUpdate) {
+	    imagesData[imagesData.length - 1].imageMetadata = JSON.stringify(metadata);
+	  }
+	}
     	updateActivePopupType(null);
     };
 
@@ -81,6 +101,7 @@ const EditImageMetadataPopup: React.FC<IProps> = ({updateActivePopupType, update
             onAccept={onUpdateAccept}
             rejectLabel={"Cancel"}
             onReject={onUpdateReject}
+	    skipCheckbox={true}
         />)
 };
 

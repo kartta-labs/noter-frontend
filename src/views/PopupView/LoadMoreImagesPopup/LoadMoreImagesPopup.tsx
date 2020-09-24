@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {useState} from 'react'
 import './LoadMoreImagesPopup.scss'
 import {AppState} from "../../../store";
 import {connect} from "react-redux";
@@ -11,6 +11,8 @@ import {FileUtil} from "../../../utils/FileUtil";
 import {ImageData} from "../../../store/labels/types";
 import {AcceptedFileType} from "../../../data/enums/AcceptedFileType";
 import {PopupActions} from "../../../logic/actions/PopupActions";
+import TextInput from "../../Common/TextInput/TextInput";
+import axios from 'axios';
 
 interface IProps {
     updateActiveImageIndex: (activeImageIndex: number) => any;
@@ -23,6 +25,8 @@ const LoadMoreImagesPopup: React.FC<IProps> = ({updateActiveImageIndex, addImage
         accept: AcceptedFileType.IMAGE
     });
 
+    const [imageUrl, setImageUrl] = useState("");
+
     let isUploadPublic = true;
     const onCheckbox = (selection) => {
     	isUploadPublic = selection;
@@ -31,9 +35,41 @@ const LoadMoreImagesPopup: React.FC<IProps> = ({updateActiveImageIndex, addImage
     const onAccept = () => {
         if (acceptedFiles.length > 0) {
 	    updateActiveImageIndex(0);
-            addImageData(acceptedFiles.map((fileData:File) => FileUtil.mapFileDataToImageData(fileData)));
+            addImageData(acceptedFiles.map((fileData:File) => FileUtil.mapFileDataToImageData(fileData, isUploadPublic)));
             PopupActions.close();
 	    updateActivePopupType(PopupWindowType.EDIT_IMAGE_METADATA);
+        } else {
+	    if (imageUrl.length > 0) {
+	    	// send request to fecth correpsonding cloud url for current input url
+		const url_items = imageUrl.split("/");
+		const imagename = url_items[url_items.length - 1];
+                axios.post(process.env.REACT_APP_BACKEND_URL + '/nb/lookup/', { "footprint":
+                        JSON.stringify({"properties":{"imagename":imagename}}) })
+                  .then(response => {
+                      // get all cloud urls for the images with the given name
+                      const allUrls = [];
+                      const matched_images = response.data.candidates;
+                      for (let i = 0; i < matched_images.length; ++i) {
+                        for (let j = 0; j < matched_images[i].urls.length; ++j) {
+                          allUrls.push(matched_images[i].urls[j].url);
+                        }
+                      }
+		      // if return with good result, create the imageData and update
+		      if (allUrls.length > 0) {
+		        updateActiveImageIndex(0);
+		        addImageData(FileUtil.createImageData(allUrls[0], isUploadPublic));
+			PopupActions.close();
+			updateActivePopupType(PopupWindowType.EDIT_IMAGE_METADATA);
+		      } else {
+		        // otherwise, alert to upload from local drive
+		        window.alert("This image from this url can't be uploaded automatically. Please download to local drive and upload from there!");
+		      }
+		})
+		.catch(error => {
+		    window.alert("Error in uploading this url automatically. Please download to local drive and upload from there!");
+                    console.log(error);
+                })
+	    }
         }
     };
 
@@ -75,10 +111,23 @@ const LoadMoreImagesPopup: React.FC<IProps> = ({updateActiveImageIndex, addImage
             </>;
     };
 
+    const onChange = (value: string) => {
+	setImageUrl(value);
+    };
+
     const renderContent = () => {
         return(<div className="LoadMoreImagesPopupContent">
             <div {...getRootProps({className: 'DropZone'})}>
                 {getDropZoneContent()}
+            </div>
+            <div >
+                <TextInput
+                    key="url"
+                    value=""
+                    isPassword={false}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => onChange(event.target.value)}
+                    label="Or Input Image URL"
+                />
             </div>
         </div>);
     };
@@ -88,10 +137,11 @@ const LoadMoreImagesPopup: React.FC<IProps> = ({updateActiveImageIndex, addImage
             title={"Load more images"}
             renderContent={renderContent}
             acceptLabel={"Load"}
-            disableAcceptButton={acceptedFiles.length < 1}
+            disableAcceptButton={acceptedFiles.length < 1 && imageUrl.length < 1}
             onAccept={onAccept}
             rejectLabel={"Cancel"}
             onReject={onReject}
+	    skipCheckbox={false}
 	    onCheckbox={onCheckbox}
         />
     );

@@ -96,7 +96,18 @@ const EditorContainer: React.FC<IProps> = ({windowSize, activeImageIndex, images
     };
 
     if (imagesData.length === 0) {
-       return null;
+       return (
+       <div className="TextContainer">
+         <div className="OneItem"></div>
+         <div className="OneItem">
+	   <div className="TextBlock">
+             <p>No images in database within the vicinity of the input footprint,</p>
+             <p>please drop manually!</p>
+	   </div>
+         </div>
+         <div className="OneItem"></div>
+       </div>
+       );
     }
 
     if (!autoUpdateLeft) {

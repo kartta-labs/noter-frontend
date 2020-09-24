@@ -16,6 +16,8 @@ import {ISize} from "../interfaces/ISize";
 import {EditorModel} from "../staticModels/EditorModel";
 import {LabelsSelector} from "../store/selectors/LabelsSelector";
 import {store} from "../index";
+import {PopupWindowType} from "../data/enums/PopupWindowType";
+import {updateActivePopupType} from "../store/general/actionCreators";
 import {updateFootprint, updateActiveImageIndex, addImageData} from "../store/labels/actionCreators";
 import axios from 'axios';
 import {findLast} from "lodash";
@@ -26,6 +28,24 @@ const config = {
 };
 
 export class BuildingMetadataUtil {
+    public static readonly EARTH_RADIUS_METERS = 6378137;
+
+    public static getMercatorXFromLongitude(longitude: number) {
+      return longitude / 180.0;
+    }
+
+    public static getMercatorYFromLatitude(latitude: number) {
+      return Math.log(Math.tan(Math.PI / 4.0 + latitude / 180 * Math.PI / 2.0)) / Math.PI;
+    }
+
+    public static getEarthCircumferenceFromLatitude(latitude: number) {
+      return  2 * Math.PI * this.EARTH_RADIUS_METERS * Math.cos(latitude / 180 * Math.PI);
+    }
+
+    public static getOneMeterInMercatorUnit(latitude: number) {
+      return 2 / this.getEarthCircumferenceFromLatitude(latitude);
+    }
+
     public static convertResponseToFootprint(response: any): FootprintPolygon[] {
         let footprint: FootprintPolygon[] = [];
         for (var i = 0; i < response.length; ++i) {
@@ -40,12 +60,30 @@ export class BuildingMetadataUtil {
             }
             footprint.push({vertices: allVertices})
         }
-
         return BuildingMetadataUtil.normalizeFootprint(footprint);
+    }
+
+    public static meterizeFootprint(footprint: FootprintPolygon[]) {
+        // further convert into meter units using Mercator coordinates
+        const reference_x = this.getMercatorXFromLongitude(footprint[0].vertices[0].x);
+        const referencd_y = this.getMercatorYFromLatitude(footprint[0].vertices[0].y);
+        const meter_to_mercator_ratio = 1 / this.getOneMeterInMercatorUnit(footprint[0].vertices[0].y);
+        for (let i = 0; i < footprint.length; ++i) {
+          for (let j = 0; j < footprint[i].vertices.length; ++j) {
+            let onePoint = footprint[i].vertices[j];
+            onePoint.x = (this.getMercatorXFromLongitude(onePoint.x) -
+              reference_x) * meter_to_mercator_ratio;
+            onePoint.y = (this.getMercatorYFromLatitude(onePoint.y) -
+              referencd_y) * meter_to_mercator_ratio;
+            footprint[i].vertices[j].x = onePoint.x;
+            footprint[i].vertices[j].y = -onePoint.y;
+          }
+        }
     }
 
     public static normalizeFootprint(footprint: FootprintPolygon[]): FootprintPolygon[] {
         if(footprint && footprint.length > 0 && footprint[0].vertices.length > 0) {
+            this.meterizeFootprint(footprint);
             let minX = footprint[0].vertices[0].x;
             let maxX = footprint[0].vertices[0].x;
             let minY = footprint[0].vertices[0].y;
@@ -76,7 +114,7 @@ export class BuildingMetadataUtil {
 
     public static fetchAndUpdateFootprint(footprintId: string): void {
         let footprint: FootprintPolygon[] = [];
-        axios.get('http://localhost/e/api/0.6/way/' + footprintId + '/full', config)
+        axios.get(process.env.REACT_APP_BACKEND_URL + '/e/api/0.6/way/' + footprintId + '/full', config)
             .then(response => {
                 let domParser = new DOMParser();
                 let xmlDocument = domParser.parseFromString(response.data, "text/xml");
@@ -97,7 +135,7 @@ export class BuildingMetadataUtil {
                 for (let i = 0; i < all_node_ids.length; i++) {
                     let id = all_node_ids[i].getAttribute('ref');
                     if (allVertices.length == 0 || id != allVertices[0].nodeId) {
-                        allVertices.push({x: all_nodes_map[id].lon*1000, y: -all_nodes_map[id].lat*1000,
+                        allVertices.push({x: all_nodes_map[id].lon, y: all_nodes_map[id].lat,
                                           isSelected: false, nodeId: id});
                     }
                 }
@@ -110,25 +148,88 @@ export class BuildingMetadataUtil {
                 // them have alrady uploaded assoications, we need ids to pair them up first before
                 // further updating)
                 let all_footprint_tags = xmlDocument.getElementsByTagName('tag');
-                let image_id = null;
+                let bbl = null;
                 for (let i = 0; i < all_footprint_tags.length; i++) {
-                    if (all_footprint_tags[i].getAttribute('k') === 'noter_image_id') {
-                        image_id = all_footprint_tags[i].getAttribute('v');
+                    if (all_footprint_tags[i].getAttribute('k') === 'bbl') {
+                        bbl = all_footprint_tags[i].getAttribute('v');
                         break;
                     }
                 }
-                if (image_id !== null) {
-                    // assume the pattern: 1,e3363734-a3cc.jpg:2,9bd0-a8f9a17690fc.jpg
-                    let image_urls = image_id.split(":");
-                    let image_ids = [];
-                    for (let i = 0; i < image_urls.length; i++) {
-                        const id_url = image_urls[i].split(",");
-                        image_urls[i] = "http://localhost/nb/media/" + id_url[1];
-                        image_ids.push(id_url[0]);
+                this.getAssociatedImages(footprintId, bbl);
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+    }
+
+    // Get the images associated with the current footprint in two cases:
+    // case 1: there are associated images encoded in its relations: return
+    // noter-backend url and image id
+    // case 2: no association happens yet, need to call the cloud functions to
+    // return the cloud url
+    public static getAssociatedImages(footprintId: string, bbl: string) {
+        // fetch the relation first
+        axios.get(process.env.REACT_APP_BACKEND_URL + '/e/api/0.6/way/' + footprintId + '/relations', config)
+            .then(response => {
+                let domParser = new DOMParser();
+                let xmlDocument = domParser.parseFromString(response.data, "text/xml");
+                console.log(xmlDocument);
+                // collect all relations, each of which encodes imageId+annotationId inside
+                let all_relations = xmlDocument.getElementsByTagName('relation');
+
+                // do differently based on if there is association
+                if (all_relations.length > 0) {
+                  // case 1: there are associated images encoded in its relations
+                  const allImageIds = [];
+                  const allImageNames = [];
+                  for (let i = 0; i < all_relations.length; ++i) {
+                    const oneImageId = this.getImageId(all_relations[i]);
+                    if (!!oneImageId) {
+                      allImageIds.push(oneImageId);
+                      allImageNames.push(this.getImageName(all_relations[i]));
                     }
-                    this.fetchAndUpdateImageData(footprintId, image_urls, image_ids);
-                } else{
-                    window.alert("No images in database within the vicinity of the input footprint, please upload manually!");
+                  }
+                  // build the noter-backend urls
+                  const allUrls = [];
+                  for (let i = 0; i < allImageIds.length; ++i) {
+                    allUrls.push(process.env.REACT_APP_BACKEND_URL + '/nb/download/' +
+                                 allImageIds[i] + '/');
+                  }
+                  // fecth images and their annotation and association if any
+                  this.fetchAndUpdateImageData(footprintId, allUrls,
+                                               allImageIds, allImageNames);
+                } else {
+                  // return if no valid bbl
+                  if(bbl === null) {
+                    //window.alert("No images in database within the vicinity of the input footprint, please upload manually!");
+                    return;
+                  }
+                  // case 2: use cloud function to fetch the cloud urls of associated images
+                  store.dispatch(updateActivePopupType(PopupWindowType.LOADER));
+                  axios.post(process.env.REACT_APP_BACKEND_URL + '/nb/lookup/', { "footprint":
+                             JSON.stringify({"properties":{"bbl":bbl}}) })
+                    .then(response => {
+                      store.dispatch(updateActivePopupType(null));
+                      // Create imageData directly and no more fecthing needed
+                      const allUrls = [];
+                      const associated_images = response.data.candidates;
+                      for (let i = 0; i < associated_images.length; ++i) {
+                        for (let j = 0; j < associated_images[i].urls.length; ++j) {
+                          allUrls.push(associated_images[i].urls[j].url);
+                        }
+                      }
+                      if (allUrls.length > 0) {
+                        this.buildImageData(allUrls);
+                      } else {
+                        window.alert("No images in database within the vicinity of the input footprint, please upload manually!");
+                        return;
+                      }
+                    })
+                    .catch(error => {
+                        store.dispatch(updateActivePopupType(null));
+                        window.alert("Error in getting images within the vicinity of the input footprint, please upload manually!");
+                        console.log(error);
+                    })
                 }
         })
         .catch(function (error) {
@@ -136,16 +237,46 @@ export class BuildingMetadataUtil {
         });
     }
 
-    // Right now, we pass in image urls and ids. Later on, just pass in footprint information and then use it to fetch
-    // all image urls and ids.
-    public static fetchAndUpdateImageData(footprintId: string, image_urls: string[], image_ids: string[], ): void {
+    public static getImageId(oneRelationElement: any) {
+                let all_tags = oneRelationElement.getElementsByTagName('tag');
+                let imageId = null;
+                for (let i = 0; i < all_tags.length; i++) {
+                    if (all_tags[i].getAttribute('k') === 'noter_image_id') {
+                      imageId = all_tags[i].getAttribute('v');
+                      break;
+                    }
+                }
+                return imageId;
+    }
+
+    public static getImageName(oneRelationElement: any) {
+                let all_tags = oneRelationElement.getElementsByTagName('tag');
+                let imageName = null;
+                for (let i = 0; i < all_tags.length; i++) {
+                    if (all_tags[i].getAttribute('k') === 'noter_image_name') {
+                      imageName = all_tags[i].getAttribute('v');
+                      break;
+                    }
+                }
+                return imageName;
+    }
+
+    // for external images on the remote places (e.g. cloud bucket), we can
+    // directly create correpsonding imageData (same as we upload one image from
+    // local drive, but automatically set as PUBLIC)
+    // at the end, we need to download them into memory for later upload
+    public static buildImageData(image_urls: string[]): void {
         //use the image urls and ids to construct the imageData
         const imageData: ImageData[] = [];
         for (let i = 0; i < image_urls.length; i++) {
+            let url_items = image_urls[i].split("?");
+            const filename_url = url_items[0];
+            url_items = filename_url.split("/");
+            const imagename = url_items[url_items.length - 1];
             imageData.push({
                 id: uuidv1(),
                 fileData: {
-                    name: "building" + i + 1 + ".jpg",
+                    name: imagename,
                     url: image_urls[i],
                     size: 1000
                 },
@@ -155,6 +286,44 @@ export class BuildingMetadataUtil {
                 labelLines: [],
                 labelPolygons: [],
                 buildingMetadata: JSON.parse(JSON.stringify(LabelsSelector.getBuildingMetadata())),
+                imageMetadata: "",
+                isPublic: true,
+                uploadResponse: "",
+                annotationsResponse: "",
+                associationsResponse: "",
+                lastUploadedAssociations: [],
+                isVisitedByObjectDetector: false,
+                isVisitedByPoseDetector: false
+            });
+        }
+        store.dispatch(addImageData(imageData));
+        store.dispatch(updateActiveImageIndex(0));
+    }
+
+    // The passed in image_urls are in the format of noter-backend way. So we
+    // need to pass the orignal file names of these images seperately
+    public static fetchAndUpdateImageData(footprintId: string, image_urls: string[], image_ids: string[], image_names: string[]): void {
+        //use the image urls and ids to construct the imageData
+        const imageData: ImageData[] = [];
+        for (let i = 0; i < image_urls.length; i++) {
+            if (image_names[i] == null) {
+               image_names[i] = "building" + i + 1 + ".jpg";
+            }
+            imageData.push({
+                id: uuidv1(),
+                fileData: {
+                    name: image_names[i],
+                    url: image_urls[i],
+                    size: 1000
+                },
+                loadStatus: false,
+                labelRects: [],
+                labelPoints: [],
+                labelLines: [],
+                labelPolygons: [],
+                buildingMetadata: JSON.parse(JSON.stringify(LabelsSelector.getBuildingMetadata())),
+                imageMetadata: "",
+                isPublic: false,
                 uploadResponse: {data: {id: image_ids[i]}},
                 annotationsResponse: "",
                 associationsResponse: "",
@@ -184,7 +353,7 @@ export class BuildingMetadataUtil {
         }
         const allRequests = [];
         for (let i = 0; i < all_annotation_ids.length; ++i) {
-            const request = axios.get('http://localhost/nb/api/v0.1/annotations/' + all_annotation_ids[i] + '/');
+            const request = axios.get(process.env.REACT_APP_BACKEND_URL + '/nb/api/v0.1/annotations/' + all_annotation_ids[i] + '/');
             allRequests.push(request);
         }
         axios.all(allRequests)
@@ -218,11 +387,11 @@ export class BuildingMetadataUtil {
     // extract the polygon labels from the annottion response
     public static getPolygonLabels(annotationsResponse: any): LabelPolygon[] {
         const content = JSON.parse(annotationsResponse.data.content_json);
-        console.log(content);
+        //console.log(content);
         let annotations: LabelPolygon[] = [];
         let polygonsJSON = content['POLYGONS_VGG_JSON']
         for (let imageFileName in polygonsJSON) {
-            console.log(imageFileName);
+            //console.log(imageFileName);
             const regions = polygonsJSON[imageFileName].regions;
             for (let index in regions) {
                 const oneLabelPolygon: LabelPolygon = {
@@ -255,7 +424,7 @@ export class BuildingMetadataUtil {
     // facadeId)
     public static fetchAssociations(footprintId: string, imageData: ImageData[]) {
         // fetch the relation first
-        axios.get('http://localhost/e/api/0.6/way/' + footprintId + '/relations', config)
+        axios.get(process.env.REACT_APP_BACKEND_URL + '/e/api/0.6/way/' + footprintId + '/relations', config)
             .then(response => {
                 let domParser = new DOMParser();
                 let xmlDocument = domParser.parseFromString(response.data, "text/xml");
@@ -281,7 +450,7 @@ export class BuildingMetadataUtil {
                 // fetch all associations related to the current footprint
                 const allRequests = [];
                 for (let i = 0; i < all_frontline_ids.length; ++i) {
-                    const request = axios.get('http://localhost/e/api/0.6/way/' + all_frontline_ids[i],
+                    const request = axios.get(process.env.REACT_APP_BACKEND_URL + '/e/api/0.6/way/' + all_frontline_ids[i],
                                               config);
                     allRequests.push(request);
                 }
@@ -349,15 +518,28 @@ export class BuildingMetadataUtil {
         };
         const footprintVertices = LabelsSelector.getBuildingMetadata().footprint[0].vertices;
         let all_node_ids = xmlDocument.getElementsByTagName('nd');
+        // the point indices, should be converted to edge indices before
+        // assiging to assoication
+        let pointIndices = [];
         for (let i = 0; i < all_node_ids.length; i++) {
             let id = all_node_ids[i].getAttribute('ref');
             for (let j = 0; j < footprintVertices.length; ++j) {
                 if (footprintVertices[j].nodeId === id) {
-                    oneAssociation.indices.push(j);
+                    pointIndices.push(j);
                     break;
                 }
             }
         }
+        // convert point indices into edge indices
+        for (let j = 0; j < footprintVertices.length; ++j) {
+          // check if the current edge two ending points [j, next] are both in
+          // the point indices
+          const next = (j + 1) % footprintVertices.length;
+          if (pointIndices.indexOf(j) >=0 && pointIndices.indexOf(next) >= 0) {
+            oneAssociation.indices.push(j);
+          }
+        }
+
         let all_tags = xmlDocument.getElementsByTagName('tag');
         let facadeId = null;
         for (let i = 0; i < all_tags.length; i++) {
@@ -382,7 +564,7 @@ export class BuildingMetadataUtil {
                 if (!!imageData[i].associationsResponse) {
                     imageData[i].associationsResponse.lineMemberIds.push(oneFrontlineId);
                 }
-                console.log(imageData[i]);
+                //console.log(imageData[i]);
                 break;
             }
         }
@@ -422,7 +604,7 @@ export class BuildingMetadataUtil {
             for (let j = 0; j < buildingMetadata.footprint[i].vertices.length; ++j) {
                 if (buildingMetadata.footprint[i].vertices[j].isSelected) {
                     ++ availablePointNum;
-                    if (availablePointNum >= 2)
+                    if (availablePointNum >= 1)
                         return true;
                 }
             }

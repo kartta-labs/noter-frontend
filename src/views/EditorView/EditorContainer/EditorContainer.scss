@@ -35,3 +35,41 @@
     align-content: center;
   }
 }
+.TextContainer {
+  align-self: stretch;
+  flex: 0 0 calc(100% -  #{$topNavigationBarHeight});
+  height: calc(100% - #{$topNavigationBarHeight});
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+
+  .OneItem {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    flex: 1;
+    .TextBlock {
+  display: block;
+  cursor: pointer;
+  user-select: none;
+  width: fit-content;
+  height: fit-content;
+  line-height: 0;
+  word-wrap: break-word;
+  padding: 20px 30px;
+  text-decoration: none;
+  box-shadow: black 0 0 0 2px inset;
+  color: black;
+  margin: initial;
+  border-radius: 2px;
+  transition: 0.3s ease-in-out;
+  background: lightgray;
+  font-weight: 500;
+      justify-content: center;
+    align-items: center;
+    }
+  }
+}
