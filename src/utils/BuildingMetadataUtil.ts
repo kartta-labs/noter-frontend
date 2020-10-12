@@ -113,7 +113,6 @@ export class BuildingMetadataUtil {
     }
 
     public static fetchAndUpdateFootprint(footprintId: string): void {
-        let footprint: FootprintPolygon[] = [];
         axios.get(process.env.REACT_APP_BACKEND_URL + '/e/api/0.6/way/' + footprintId + '/full', config)
             .then(response => {
                 let domParser = new DOMParser();
@@ -134,7 +133,7 @@ export class BuildingMetadataUtil {
                 let allVertices: IGeoPoint[] = [];
                 for (let i = 0; i < all_node_ids.length; i++) {
                     let id = all_node_ids[i].getAttribute('ref');
-                    if (allVertices.length == 0 || id != allVertices[0].nodeId) {
+                    if (allVertices.length === 0 || id !== allVertices[0].nodeId) {
                         allVertices.push({x: all_nodes_map[id].lon, y: all_nodes_map[id].lat,
                                           isSelected: false, nodeId: id});
                     }
