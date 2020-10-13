@@ -24,9 +24,10 @@ interface IProps {
     imagesData: ImageData[];
     activeContext: ContextType;
     activeLabelType: LabelType;
+    showAlertMessageFlag: boolean;
 }
 
-const EditorContainer: React.FC<IProps> = ({windowSize, activeImageIndex, imagesData, activeContext}) => {
+const EditorContainer: React.FC<IProps> = ({windowSize, activeImageIndex, imagesData, activeContext, activeLabelType, showAlertMessageFlag}) => {
     const [leftTabStatus, setLeftTabStatus] = useState(false);
     const [rightTabStatus, setRightTabStatus] = useState(true);
     const [autoUpdateLeft, setAutoUpdateLeft] = useState(false);
@@ -96,18 +97,22 @@ const EditorContainer: React.FC<IProps> = ({windowSize, activeImageIndex, images
     };
 
     if (imagesData.length === 0) {
-       return (
-       <div className="TextContainer">
-         <div className="OneItem"></div>
-         <div className="OneItem">
-	   <div className="TextBlock">
-             <p>No images in database within the vicinity of the input footprint,</p>
-             <p>please drop manually!</p>
-	   </div>
-         </div>
-         <div className="OneItem"></div>
-       </div>
+       if (showAlertMessageFlag) {
+         return (
+           <div className="TextContainer">
+             <div className="OneItem"></div>
+             <div className="OneItem">
+	       <div className="TextBlock">
+                 <p>No images in the database showing the area of selected footprint,</p>
+                 <p>please upload.</p>
+	       </div>
+             </div>
+             <div className="OneItem"></div>
+           </div>
        );
+       } else {
+         return null;
+       }
     }
 
     if (!autoUpdateLeft) {
@@ -158,7 +163,8 @@ const mapStateToProps = (state: AppState) => ({
     activeImageIndex: state.labels.activeImageIndex,
     imagesData: state.labels.imagesData,
     activeContext: state.general.activeContext,
-    activeLabelType: state.labels.activeLabelType
+    activeLabelType: state.labels.activeLabelType,
+    showAlertMessageFlag: state.labels.showAlertMessageFlag
 });
 
 export default connect(

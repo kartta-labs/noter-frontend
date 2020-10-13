@@ -62,7 +62,11 @@ const LoadMoreImagesPopup: React.FC<IProps> = ({updateActiveImageIndex, addImage
 			updateActivePopupType(PopupWindowType.EDIT_IMAGE_METADATA);
 		      } else {
 		        // otherwise, alert to upload from local drive
-		        window.alert("This image from this url can't be uploaded automatically. Please download to local drive and upload from there!");
+		        //window.alert("This image from this url can't be uploaded automatically. Please download to local drive and upload from there!");
+		        updateActiveImageIndex(0);
+		        addImageData(FileUtil.createImageData(imageUrl, isUploadPublic));
+			PopupActions.close();
+			updateActivePopupType(PopupWindowType.EDIT_IMAGE_METADATA);
 		      }
 		})
 		.catch(error => {

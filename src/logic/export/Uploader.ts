@@ -143,6 +143,10 @@ export class Uploader {
         let metadata_object =
           !!imageData.imageMetadata?JSON.parse(imageData.imageMetadata):{};
         metadata_object.imagename = imageData.fileData.name;
+        // make sure for image as url case, we put this info in the description
+        if (!(imageData.fileData instanceof File)) {
+          metadata_object.image_url = imageData.fileData.url;
+        }
         formData.append("description", JSON.stringify(metadata_object));
         console.log(formData);
         console.log(imageData.fileData);

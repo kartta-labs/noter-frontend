@@ -18,7 +18,7 @@ import {LabelsSelector} from "../store/selectors/LabelsSelector";
 import {store} from "../index";
 import {PopupWindowType} from "../data/enums/PopupWindowType";
 import {updateActivePopupType} from "../store/general/actionCreators";
-import {updateFootprint, updateActiveImageIndex, addImageData} from "../store/labels/actionCreators";
+import {updateFootprint, updateActiveImageIndex, addImageData, updateShowAlertMessageFlag} from "../store/labels/actionCreators";
 import axios from 'axios';
 import {findLast} from "lodash";
 
@@ -200,7 +200,7 @@ export class BuildingMetadataUtil {
                 } else {
                   // return if no valid bbl
                   if(bbl === null) {
-                    //window.alert("No images in database within the vicinity of the input footprint, please upload manually!");
+                    store.dispatch(updateShowAlertMessageFlag(true));
                     return;
                   }
                   // case 2: use cloud function to fetch the cloud urls of associated images
@@ -220,13 +220,14 @@ export class BuildingMetadataUtil {
                       if (allUrls.length > 0) {
                         this.buildImageData(allUrls);
                       } else {
-                        window.alert("No images in database within the vicinity of the input footprint, please upload manually!");
+                        store.dispatch(updateShowAlertMessageFlag(true));
                         return;
                       }
                     })
                     .catch(error => {
                         store.dispatch(updateActivePopupType(null));
-                        window.alert("Error in getting images within the vicinity of the input footprint, please upload manually!");
+                        // window.alert("Error in getting images within the vicinity of the input footprint, please upload manually!");
+                        store.dispatch(updateShowAlertMessageFlag(true));
                         console.log(error);
                     })
                 }

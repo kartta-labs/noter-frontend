@@ -11,6 +11,7 @@ const initialState: LabelsState = {
     firstLabelCreatedFlag: false,
     labels: [{name: "facade", id: "facade"}],
     buildingMetadata: {footprint: [], associations: []},
+    showAlertMessageFlag: false,
 };
 
 export function labelsReducer(
@@ -143,6 +144,12 @@ export function labelsReducer(
                 }
             }
             return newState;
+        }
+        case Action.UPDATE_SHOW_ALERT_MESSAGE_FLAG: {
+            return {
+                ...state,
+                showAlertMessageFlag: action.payload.showAlertMessageFlag
+            }
         }
         default:
             return state;

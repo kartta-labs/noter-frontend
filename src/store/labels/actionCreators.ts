@@ -129,3 +129,12 @@ export function deleteAssociation(facadeId: string): LabelsActionTypes {
         },
     };
 }
+
+export function updateShowAlertMessageFlag(showAlertMessageFlag: boolean) {
+    return {
+        type: Action.UPDATE_SHOW_ALERT_MESSAGE_FLAG,
+        payload: {
+            showAlertMessageFlag
+        }
+    }
+}

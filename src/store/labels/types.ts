@@ -107,6 +107,7 @@ export type LabelsState = {
     firstLabelCreatedFlag: boolean;
     labels: LabelName[];
     buildingMetadata: BuildingMetadata;
+    showAlertMessageFlag: boolean;
 }
 
 interface UpdateActiveImageIndex {
@@ -209,6 +210,13 @@ interface DeleteAssociation {
     }
 }
 
+interface UpdateShowAlertMessageFlag {
+    type: typeof Action.UPDATE_SHOW_ALERT_MESSAGE_FLAG;
+    payload: {
+        showAlertMessageFlag: boolean;
+    }
+}
+
 export type LabelsActionTypes = UpdateActiveImageIndex
     | UpdateActiveLabelNameId
     | UpdateActiveLabelType
@@ -223,3 +231,4 @@ export type LabelsActionTypes = UpdateActiveImageIndex
     | UpdateSelectdPoints
     | UpdateAssociations
     | DeleteAssociation
+    | UpdateShowAlertMessageFlag
