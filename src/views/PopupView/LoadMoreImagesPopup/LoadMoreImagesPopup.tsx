@@ -61,8 +61,7 @@ const LoadMoreImagesPopup: React.FC<IProps> = ({updateActiveImageIndex, addImage
 			PopupActions.close();
 			updateActivePopupType(PopupWindowType.EDIT_IMAGE_METADATA);
 		      } else {
-		        // otherwise, alert to upload from local drive
-		        //window.alert("This image from this url can't be uploaded automatically. Please download to local drive and upload from there!");
+                        // load this url directly
 		        updateActiveImageIndex(0);
 		        addImageData(FileUtil.createImageData(imageUrl, isUploadPublic));
 			PopupActions.close();
@@ -70,8 +69,13 @@ const LoadMoreImagesPopup: React.FC<IProps> = ({updateActiveImageIndex, addImage
 		      }
 		})
 		.catch(error => {
-		    window.alert("Error in uploading this url automatically. Please download to local drive and upload from there!");
-                    console.log(error);
+		    //window.alert("Error in uploading this url automatically. Please download to local drive and upload from there!");
+                    //console.log(error);
+		    //temp fix when the "lookup" has no cloud function to use
+		    updateActiveImageIndex(0);
+	     	    addImageData(FileUtil.createImageData(imageUrl, isUploadPublic));
+		    PopupActions.close();
+		    updateActivePopupType(PopupWindowType.EDIT_IMAGE_METADATA);
                 })
 	    }
         }
