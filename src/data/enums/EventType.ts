@@ -7,5 +7,6 @@ export enum EventType {
     KEY_DOWN = "keydown",
     KEY_PRESS = "keypress",
     KEY_UP = "keyup",
-    FOCUS = "focus"
+    FOCUS = "focus",
+    WINDOW_CLOSE = "beforeunload"
 }

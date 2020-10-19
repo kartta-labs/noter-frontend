@@ -290,11 +290,15 @@ export class Uploader {
                 }
                 axios.all(allRequests)
                     .then(axios.spread((...responses) => {
-                        // update the associationsResponse
-                        imageData.associationsResponse = {relationId: newRelationId,
+                        // update the associationsResponse properly based on different cases
+                        if (!!newRelationId) {
+                          imageData.associationsResponse = {relationId: newRelationId,
                                                           lineMemberIds: []};
-                        for (let i = 0; i < newLineIds.length; ++i) {
+                          for (let i = 0; i < newLineIds.length; ++i) {
                             imageData.associationsResponse.lineMemberIds.push(newLineIds[i]);
+                          }
+                        } else {
+                          imageData.associationsResponse = "";
                         }
                         // now we can close the current changeset
                         this.closeAssociationUpload(changesetId);
@@ -522,7 +526,7 @@ export class Uploader {
                  </changeset>
               </osm>`
         const buildingMetadata = imageData.buildingMetadata;
-        if (buildingMetadata.associations.length == 0) {
+        if (buildingMetadata.associations.length == 0 && !imageData.associationsResponse) {
             isUploadDone[imageData.id] = true;
             return;
         }
@@ -530,10 +534,38 @@ export class Uploader {
             JSON.parse(JSON.stringify(imageData.buildingMetadata.associations));
         axios.put(process.env.REACT_APP_BACKEND_URL + '/e/api/0.6/changeset/create', xmlCreateChangeset, config)
             .then(response => {
-                this.createAndUploadLines(imageData, response.data);
+                // if no association in the current working space, we still need
+                // to delete existing ones
+                if (buildingMetadata.associations.length == 0) {
+                    this.deleteUploadedAssociations(imageData, response.data,
+                                                    null, []);
+                } else {
+                  this.createAndUploadLines(imageData, response.data);
+                }
             })
             .catch(function (error) {
                 console.log(error);
             });
+    }
+
+    public static isUploadNeeded(imageData: ImageData, labelName: LabelName): boolean {
+        if (!imageData.uploadResponse || !imageData.uploadResponse.data.id) {
+          return true;
+        } else {
+          //further check if annotations should be uploaded
+          const annotations = this.collectAnnotations(imageData, labelName);
+          if (!imageData.annotationsResponse || imageData.annotationsResponse.data.content_json
+                   != JSON.stringify(annotations)) {
+            return true;
+          } else {
+            const sortedCurrent = imageData.buildingMetadata.associations.slice().sort();
+            const sortedLastUploaded = imageData.lastUploadedAssociations.slice().sort();
+            if (JSON.stringify(sortedCurrent) === JSON.stringify(sortedLastUploaded)) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+      }
     }
 }

@@ -26,11 +26,11 @@ const LoadMoreImagesPopup: React.FC<IProps> = ({updateActiveImageIndex, addImage
     });
 
     const [imageUrl, setImageUrl] = useState("");
+    const [isUploadPublic, setUploadpublic] = useState(true);
 
-    let isUploadPublic = true;
     const onCheckbox = (selection) => {
-    	isUploadPublic = selection;
-	console.log(isUploadPublic);
+    	setUploadpublic(selection);
+	console.log(selection);
     };
     const onAccept = () => {
         if (acceptedFiles.length > 0) {

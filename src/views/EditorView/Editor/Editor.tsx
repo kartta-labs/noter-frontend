@@ -1,7 +1,7 @@
 import React from 'react';
 import './Editor.scss';
 import {ISize} from "../../../interfaces/ISize";
-import {ImageData, LabelPoint, LabelRect} from "../../../store/labels/types";
+import {ImageData, LabelPoint, LabelRect, LabelName} from "../../../store/labels/types";
 import {FileUtil} from "../../../utils/FileUtil";
 import {AppState} from "../../../store";
 import {connect} from "react-redux";
@@ -32,6 +32,7 @@ import {AIActions} from "../../../logic/actions/AIActions";
 import {store} from "../../../index";
 import {LabelsSelector} from "../../../store/selectors/LabelsSelector";
 import {BuildingMetadataUtil} from "../../../utils/BuildingMetadataUtil"
+import {Uploader} from "../../../logic/export/Uploader"
 
 interface IProps {
     size: ISize;
@@ -100,6 +101,7 @@ class Editor extends React.Component<IProps, IState> {
     private mountEventListeners() {
         window.addEventListener(EventType.MOUSE_MOVE, this.update);
         window.addEventListener(EventType.MOUSE_UP, this.update);
+	window.addEventListener(EventType.WINDOW_CLOSE, this.handleWindowClose);
         EditorModel.canvas.addEventListener(EventType.MOUSE_DOWN, this.update);
         EditorModel.canvas.addEventListener(EventType.MOUSE_WHEEL, this.handleZoom);
     }
@@ -107,6 +109,7 @@ class Editor extends React.Component<IProps, IState> {
     private unmountEventListeners() {
         window.removeEventListener(EventType.MOUSE_MOVE, this.update);
         window.removeEventListener(EventType.MOUSE_UP, this.update);
+	window.removeEventListener(EventType.WINDOW_CLOSE, this.handleWindowClose);
         EditorModel.canvas.removeEventListener(EventType.MOUSE_DOWN, this.update);
         EditorModel.canvas.removeEventListener(EventType.MOUSE_WHEEL, this.handleZoom);
     }
@@ -195,6 +198,26 @@ class Editor extends React.Component<IProps, IState> {
         !this.props.activePopupType && EditorActions.updateMousePositionIndicator(event);
         EditorActions.fullRender();
     };
+
+    private handleWindowClose = (event) => {
+        // check if any unsaved data
+        const imagesData: ImageData[] = LabelsSelector.getImagesData();
+        const labelNames: LabelName[] = LabelsSelector.getLabelNames();
+	const activeImageIndex = LabelsSelector.getActiveImageIndex();
+	imagesData[activeImageIndex].buildingMetadata =
+            JSON.parse(JSON.stringify(LabelsSelector.getBuildingMetadata()));
+	let needAlert = false;
+	for (let i=0; i < imagesData.length; i++) {
+	  if (Uploader.isUploadNeeded(imagesData[i], labelNames[0])) {
+	    needAlert = true;
+	    break;
+	  }
+	}
+	if (needAlert) {
+  	  event.preventDefault();
+  	  event.returnValue = '';
+	}
+    }
 
     private handleZoom = (event: MouseWheelEvent) => {
         if (event.ctrlKey || (PlatformModel.isMac && event.metaKey)) {
