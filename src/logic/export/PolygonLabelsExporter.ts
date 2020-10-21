@@ -6,7 +6,6 @@ import {LabelsSelector} from "../../store/selectors/LabelsSelector";
 import {saveAs} from "file-saver";
 import {ExporterUtil} from "../../utils/ExporterUtil";
 import {findLast} from "lodash";
-import axios from 'axios';
 
 export class PolygonLabelsExporter {
     public static export(exportFormatType: ExportFormatType): void {

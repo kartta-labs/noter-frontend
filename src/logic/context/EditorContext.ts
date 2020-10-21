@@ -10,7 +10,6 @@ import {ViewPortActions} from "../actions/ViewPortActions";
 import {Direction} from "../../data/enums/Direction";
 import {PlatformUtil} from "../../utils/PlatformUtil";
 import {LabelActions} from "../actions/LabelActions";
-import {LineRenderEngine} from "../render/LineRenderEngine";
 
 export class EditorContext extends BaseContext {
     public static actions: HotKeyAction[] = [

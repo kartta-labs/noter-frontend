@@ -1,19 +1,14 @@
-import {ExportFormatType} from "../../data/enums/ExportFormatType";
 import {IPoint} from "../../interfaces/IPoint";
-import {VGGFileData, VGGObject, VGGPolygon, VGGRegionsData} from "../../data/VGG/IVGG";
-import {ImageData, LabelName, LabelPolygon} from "../../store/labels/types";
+import {ImageData, LabelName} from "../../store/labels/types";
 import {LabelsSelector} from "../../store/selectors/LabelsSelector";
 import {store} from "../../index";
 import {PopupWindowType} from "../../data/enums/PopupWindowType";
 import {updateActivePopupType} from "../../store/general/actionCreators";
 import {EditorModel} from "../../staticModels/EditorModel";
-import {saveAs} from "file-saver";
-import {ExporterUtil} from "../../utils/ExporterUtil";
 import {PolygonLabelsExporter} from "./PolygonLabelsExporter";
 import {LineLabelsExporter} from "./LineLabelExport";
 import {RectLabelsExporter} from "./RectLabelsExporter";
 import {PointLabelsExporter} from "./PointLabelsExport";
-import {findLast} from "lodash";
 import axios from 'axios';
 
 const config = {
@@ -81,7 +76,7 @@ export class Uploader {
           //further check if annotations should be uploaded
           const annotations = this.collectAnnotations(imageData, labelName);
           if (!imageData.annotationsResponse || imageData.annotationsResponse.data.content_json
-                   != JSON.stringify(annotations)) {
+                   !== JSON.stringify(annotations)) {
             this.uploadOnlyAnnotations(annotations, imageData);
           } else {
             console.log("same annotations, try to check associations...");
@@ -394,13 +389,13 @@ export class Uploader {
       for (let i = 0; i < 2; ++i) {
         let start  = twoIndices[0];
         let end = twoIndices[1];
-        if (i == 1) {
+        if (i === 1) {
           [start, end] = [end, start]
         }
         let perpendicularDistnaceSum = 0;
         let vertexNum = 0;
         let allIndices =[];
-        for (let index = start; index != end && vertexNum <= vertices.length; index = (index + 1) % vertices.length) {
+        for (let index = start; index !== end && vertexNum <= vertices.length; index = (index + 1) % vertices.length) {
           perpendicularDistnaceSum += this.distanceToLineSegment(vertices[index],
                                                             vertices[start],
                                                             vertices[end]);
@@ -450,7 +445,7 @@ export class Uploader {
       }
       console.log(allpointIndices);
       // order and fill in gap
-      if (allpointIndices.length == 2) {
+      if (allpointIndices.length === 2) {
         return this.orderAndFillGap(allVertices, allpointIndices);
       } else {
         // find the two points with maximum distance as two ending points
@@ -478,12 +473,6 @@ export class Uploader {
         for (let i = 0; i < buildingMetadata.associations.length; ++i) {
             const facadeId = this.constructFacadeId(buildingMetadata.associations[i].facadeId, imageData);
             const polygonIndex = buildingMetadata.associations[i].polygonIndex;
-
-            const firstNodeIndex = buildingMetadata.associations[i].indices[0];
-            const secondNodeIndex = buildingMetadata.associations[i]
-                .indices[buildingMetadata.associations[i].indices.length - 1];
-            const firstNodeId = buildingMetadata.footprint[polygonIndex].vertices[firstNodeIndex].nodeId;
-            const secondNodeId = buildingMetadata.footprint[polygonIndex].vertices[secondNodeIndex].nodeId;
 
             // ideally, the association should have all the consecutive indices
             // of all points. However, in reality, user annotation may miss some
@@ -526,7 +515,7 @@ export class Uploader {
                  </changeset>
               </osm>`
         const buildingMetadata = imageData.buildingMetadata;
-        if (buildingMetadata.associations.length == 0 && !imageData.associationsResponse) {
+        if (buildingMetadata.associations.length === 0 && !imageData.associationsResponse) {
             isUploadDone[imageData.id] = true;
             return;
         }
@@ -536,7 +525,7 @@ export class Uploader {
             .then(response => {
                 // if no association in the current working space, we still need
                 // to delete existing ones
-                if (buildingMetadata.associations.length == 0) {
+                if (buildingMetadata.associations.length === 0) {
                     this.deleteUploadedAssociations(imageData, response.data,
                                                     null, []);
                 } else {
@@ -555,7 +544,7 @@ export class Uploader {
           //further check if annotations should be uploaded
           const annotations = this.collectAnnotations(imageData, labelName);
           if (!imageData.annotationsResponse || imageData.annotationsResponse.data.content_json
-                   != JSON.stringify(annotations)) {
+                   !== JSON.stringify(annotations)) {
             return true;
           } else {
             const sortedCurrent = imageData.buildingMetadata.associations.slice().sort();

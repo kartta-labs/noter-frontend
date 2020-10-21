@@ -25,7 +25,7 @@ export function labelsReducer(
                 ...state,
                 activeImageIndex: action.payload.activeImageIndex
             }
-            if (currentActiveImageIndex !== null && currentActiveImageIndex != action.payload.activeImageIndex) {
+            if (currentActiveImageIndex !== null && currentActiveImageIndex !== action.payload.activeImageIndex) {
                 newState.imagesData[currentActiveImageIndex].buildingMetadata =
                     JSON.parse(JSON.stringify(newState.buildingMetadata));
             }

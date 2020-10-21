@@ -8,12 +8,8 @@ import {AppState} from "../../../store";
 import {connect} from "react-redux";
 import Scrollbars from 'react-custom-scrollbars';
 import TextInput from "../../Common/TextInput/TextInput";
-import {ImageButton} from "../../Common/ImageButton/ImageButton";
-import uuidv1 from 'uuid/v1';
 import {LabelName, ImageData} from "../../../store/labels/types";
-import {LabelUtil} from "../../../utils/LabelUtil";
 import {LabelsSelector} from "../../../store/selectors/LabelsSelector";
-import {LabelActions} from "../../../logic/actions/LabelActions";
 
 interface IProps {
     updateActivePopupType: (activePopupType: PopupWindowType) => any;

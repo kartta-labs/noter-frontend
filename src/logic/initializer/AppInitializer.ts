@@ -1,5 +1,4 @@
 import {updateWindowSize} from "../../store/general/actionCreators";
-import {updateFootprint} from "../../store/labels/actionCreators";
 import {ContextManager} from "../context/ContextManager";
 import {store} from "../../index";
 import {PlatformUtil} from "../../utils/PlatformUtil";
@@ -7,7 +6,6 @@ import {BuildingMetadataUtil} from "../../utils/BuildingMetadataUtil";
 import {PlatformModel} from "../../staticModels/PlatformModel";
 import {EditorModel} from "../../staticModels/EditorModel";
 import {EventType} from "../../data/enums/EventType";
-import axios from 'axios';
 
 export class AppInitializer {
     public static inti():void {
