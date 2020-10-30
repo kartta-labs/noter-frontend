@@ -13,6 +13,7 @@ import {AcceptedFileType} from "../../../data/enums/AcceptedFileType";
 import {PopupActions} from "../../../logic/actions/PopupActions";
 import TextInput from "../../Common/TextInput/TextInput";
 import axios from 'axios';
+import {LabelsSelector} from "../../../store/selectors/LabelsSelector";
 
 interface IProps {
     updateActiveImageIndex: (activeImageIndex: number) => any;
@@ -32,12 +33,19 @@ const LoadMoreImagesPopup: React.FC<IProps> = ({updateActiveImageIndex, addImage
     	setUploadpublic(selection);
 	console.log(selection);
     };
+    const reupdateActiveImageIndex = (imageNum) => {
+      if (imageNum > 0) {
+	  updateActiveImageIndex(imageNum);
+      }
+    }
     const onAccept = () => {
+        const currentImageNum = LabelsSelector.getImagesData().length;
         if (acceptedFiles.length > 0) {
 	    updateActiveImageIndex(0);
             addImageData(acceptedFiles.map((fileData:File) => FileUtil.mapFileDataToImageData(fileData, isUploadPublic)));
             PopupActions.close();
 	    updateActivePopupType(PopupWindowType.EDIT_IMAGE_METADATA);
+	    reupdateActiveImageIndex(currentImageNum);
         } else {
 	    if (imageUrl.length > 0) {
 	    	// send request to fecth correpsonding cloud url for current input url
@@ -67,6 +75,7 @@ const LoadMoreImagesPopup: React.FC<IProps> = ({updateActiveImageIndex, addImage
 			PopupActions.close();
 			updateActivePopupType(PopupWindowType.EDIT_IMAGE_METADATA);
 		      }
+		      reupdateActiveImageIndex(currentImageNum);
 		})
 		.catch(error => {
 		    //window.alert("Error in uploading this url automatically. Please download to local drive and upload from there!");
@@ -76,6 +85,7 @@ const LoadMoreImagesPopup: React.FC<IProps> = ({updateActiveImageIndex, addImage
 	     	    addImageData(FileUtil.createImageData(imageUrl, isUploadPublic));
 		    PopupActions.close();
 		    updateActivePopupType(PopupWindowType.EDIT_IMAGE_METADATA);
+		    reupdateActiveImageIndex(currentImageNum);
                 })
 	    }
         }

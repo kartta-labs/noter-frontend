@@ -80,6 +80,14 @@ class FootprintPanel extends React.Component<IProps, IState> {
     private distanceToSegmentEnds = (p: IPoint, p1: IPoint, p2: IPoint) => {
         return this.distanceBetweenPoints(p, p1) + this.distanceBetweenPoints(p, p2);
     }
+
+    private isInsideSegment = (p: IPoint, p1: IPoint, p2: IPoint) => {
+    	const dx = p1.x - p2.x;
+    	const dy = p1.y - p2.y;
+    	const innerProduct = (p.x - p2.x)*dx + (p.y - p2.y)*dy;
+    	return 0 <= innerProduct && innerProduct <= dx*dx + dy*dy;
+    }
+
     private isAssociated(buildingMetadata, polyIndex: number, index: number) {
     	var found = false;
 	for (let i = 0; i < buildingMetadata.associations.length; ++i) {
@@ -103,9 +111,7 @@ class FootprintPanel extends React.Component<IProps, IState> {
 	   			    height: EditorModel.canvasFootprint.height}, mousePosition)) {
 	   const {buildingMetadata} = this.props;
 	   const footprint = buildingMetadata.footprint;
-	   var miniDist = this.distanceToSegmentEnds(mousePosition,
-						     BuildingMetadataUtil.resizeOnePoint(footprint[0].vertices[0]),
-						     BuildingMetadataUtil.resizeOnePoint(footprint[0].vertices[1]));
+	   var miniDist = -1.0;
 	   // here each line is represneted by its starting index (e.g. 0 reprents the line [0, 1])
 	   var polygonIndex = 0, pointIndex = 0;
 	   var foundCloseEnough = false;
@@ -118,11 +124,16 @@ class FootprintPanel extends React.Component<IProps, IState> {
 		   }
 		   const p1 = BuildingMetadataUtil.resizeOnePoint(footprint[i].vertices[j]);
 		   const p2 = BuildingMetadataUtil.resizeOnePoint(footprint[i].vertices[next]);
+		   // second check if the mouse point is inside the current footprint side
+		   if (!this.isInsideSegment(mousePosition, p1, p2)) {
+		   	continue;
+		   }
+		   // find the closest one as the target
 	       	   const penpendicularDist = this.distanceToLineSegment(mousePosition, p1, p2);
 		   if (penpendicularDist < 6) {
 		     foundCloseEnough = true;
 		     const dist = this.distanceToSegmentEnds(mousePosition, p1, p2);
-	       	     if (dist < miniDist) {
+	       	     if (miniDist < 0 || dist < miniDist) {
 		       miniDist = dist;
 		       polygonIndex = i;
 		       pointIndex = j;

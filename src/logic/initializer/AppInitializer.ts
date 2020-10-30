@@ -37,7 +37,7 @@ export class AppInitializer {
     };
 
     private static disableUnwantedKeyBoardBehaviour = (event: KeyboardEvent) => {
-        if (PlatformModel.isMac && event.metaKey) {
+        if (PlatformModel.isMac && event.metaKey && !(['c', 'v'].includes(event.key))) {
             event.preventDefault();
         }
 
