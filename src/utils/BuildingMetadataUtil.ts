@@ -23,7 +23,10 @@ import axios from 'axios';
 import {findLast} from "lodash";
 
 const config = {
-    headers: {'Content-Type': 'text/xml'},
+    headers: {
+        'Content-Type': 'text/xml',
+        'Accept': 'text/xml'
+    },
     withCredentials: true
 };
 

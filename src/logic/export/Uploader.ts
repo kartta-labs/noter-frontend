@@ -12,7 +12,10 @@ import {PointLabelsExporter} from "./PointLabelsExport";
 import axios from 'axios';
 
 const config = {
-    headers: {'Content-Type': 'text/xml'},
+    headers: {
+        'Content-Type': 'text/xml',
+        'Accept': 'text/xml'
+    },
     withCredentials: true
 };
 let isUploadDone = {};
